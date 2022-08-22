@@ -22,16 +22,17 @@ public class ChangeTitleSubmitEvent extends ListenerAdapter {
         if (!event.getModalId().equals("change-title")) {
             return;
         }
-        event.deferReply(true).queue();
         String newTitle = Objects.requireNonNull(event.getValue("new-title")).getAsString();
 
         User user = event.getUser();
         ThreadChannel thread = BugManager.changeTitleMap.get(user.getIdLong());
         if (thread == null) {
-            event.getHook().editOriginal("対象スレッドを見つけられませんでした。もう一度お試しください。").queue();
+            event.reply("対象スレッドを見つけられませんでした。もう一度お試しください。").queue();
             return;
         }
         BugManager.changeTitleMap.remove(user.getIdLong());
+
+        event.deferEdit().queue();
 
         String threadTitle;
         int issueNumber = -1;

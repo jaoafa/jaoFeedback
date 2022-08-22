@@ -1,0 +1,88 @@
+package com.jaoafa.bugreporter.lib;
+
+import com.jaoafa.bugreporter.Main;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+
+public class Config {
+    private final Logger logger;
+    private final String token;
+    private final long ownerId;
+    private final long guildId;
+    private final long channelId;
+    private final String githubAPIToken;
+
+    public Config() throws RuntimeException {
+        logger = Main.getLogger();
+
+        String path = "config.json";
+        if (System.getenv("CONFIG_PATH") != null) {
+            path = System.getenv("CONFIG_PATH");
+        }
+        File file = new File(path);
+        if (!file.exists()) {
+            logger.error("コンフィグファイル config.json が見つかりません。");
+            throw new RuntimeException();
+        }
+
+        try {
+            String json = String.join("\n", Files.readAllLines(file.toPath()));
+            JSONObject config = new JSONObject(json);
+
+            // - 必須項目の定義（ない場合、RuntimeExceptionが発生して進まない）
+            requiredConfig(config, "token");
+            requiredConfig(config, "ownerId");
+            requiredConfig(config, "guildId");
+            requiredConfig(config, "channelId");
+            requiredConfig(config, "githubAPIToken");
+
+            // - 設定項目の取得
+            token = config.getString("token");
+            ownerId = config.getLong("ownerId");
+            guildId = config.getLong("guildId");
+            channelId = config.getLong("channelId");
+            githubAPIToken = config.getString("githubAPIToken");
+        } catch (IOException e) {
+            logger.warn("コンフィグファイル config.json を読み取れませんでした: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException();
+        } catch (JSONException e) {
+            logger.warn("コンフィグファイル config.json の JSON 形式が正しくありません: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException();
+        }
+    }
+
+    void requiredConfig(JSONObject config, String key) throws RuntimeException {
+        if (config.has(key)) {
+            return;
+        }
+        logger.warn(String.format("コンフィグファイルで必須であるキーが見つかりません: %s", key));
+        throw new RuntimeException();
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public long getOwnerId() {
+        return ownerId;
+    }
+
+    public long getGuildId() {
+        return guildId;
+    }
+
+    public long getChannelId() {
+        return channelId;
+    }
+
+    public String getGitHubAPIToken() {
+        return githubAPIToken;
+    }
+}

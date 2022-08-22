@@ -14,7 +14,7 @@ import java.util.List;
 public class BugMenu extends MessageContextMenu {
 
     public BugMenu() {
-        this.name = "このメッセージを不具合報告する";
+        this.name = "不具合報告";
         this.guildOnly = true;
         this.userPermissions = new Permission[]{Permission.VIEW_CHANNEL};
     }

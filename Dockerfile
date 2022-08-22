@@ -7,7 +7,7 @@ RUN mvn -B package; echo ""
 COPY src /build/src
 RUN mvn -B package
 
-FROM azul/zulu-openjdk-alpine:17
+FROM azul/zulu-openjdk-alpine:18
 
 RUN apk update
 

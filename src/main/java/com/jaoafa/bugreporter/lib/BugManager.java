@@ -128,8 +128,15 @@ public class BugManager {
             messages.add("");
         }
         // 通知ロール + 報告者 + メッセージ送信者
-        messages.add("<@&959313488113717298> / %s / %s".formatted(reporter.getAsMention(),
-                                                                  message.getAuthor().getAsMention()));
+        List<String> mentions = new ArrayList<>();
+        mentions.add("<@&959313488113717298>"); // @jDev
+        mentions.add(reporter.getAsMention()); // 報告者
+        if (!message.getAuthor().isBot()) {
+            // メッセージ送信者がBotではない場合のみメンションする
+            mentions.add(message.getAuthor().getAsMention()); // メッセージ送信者
+        }
+
+        messages.add(String.join(" / ", mentions));
 
         ZonedDateTime createdAt = message.getTimeCreated().atZoneSameInstant(ZoneId.of("Asia/Tokyo"));
         EmbedBuilder builder = new EmbedBuilder()

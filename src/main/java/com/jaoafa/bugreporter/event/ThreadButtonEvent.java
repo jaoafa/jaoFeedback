@@ -3,9 +3,7 @@ package com.jaoafa.bugreporter.event;
 import com.jaoafa.bugreporter.Main;
 import com.jaoafa.bugreporter.lib.BugManager;
 import com.jaoafa.bugreporter.lib.Config;
-import com.jaoafa.bugreporter.lib.GitHub;
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -18,7 +16,6 @@ import net.dv8tion.jda.internal.utils.PermissionUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
-import java.util.regex.Matcher;
 
 public class ThreadButtonEvent extends ListenerAdapter {
 
@@ -120,20 +117,19 @@ public class ThreadButtonEvent extends ListenerAdapter {
             event.reply("あなたにはこのアクションを実行する権限がありません。").setEphemeral(true).queue();
             return;
         }
-        event.deferEdit().queue();
 
-        User user = event.getUser();
-        thread.sendMessage("`%s` のアクションにより、報告をクローズします".formatted(user.getAsTag())).complete();
-        thread.getManager().setArchived(true).setLocked(true).queue();
+        TextInput messageRow = TextInput
+                .create("close-reason", "報告を閉じる理由", TextInputStyle.PARAGRAPH)
+                .setPlaceholder("報告を閉じる理由を入力してください（XXXXXで修正した・対応の必要がない など）")
+                .setMinLength(1)
+                .setMaxLength(2000)
+                .setRequired(true)
+                .build();
 
-        Matcher matcher = BugManager.ISSUE_PATTERN.matcher(thread.getName());
-        if (!matcher.find()) {
-            return;
-        }
-        int issueNumber = Integer.parseInt(matcher.group(1));
-        GitHub.createIssueComment(BugManager.REPOSITORY,
-                                  issueNumber,
-                                  "`%s` がスレッドをクローズしたため、本 issue もクローズします。".formatted(user.getAsTag()));
-        GitHub.updateIssue(BugManager.REPOSITORY, issueNumber, GitHub.UpdateType.STATE, "closed");
+        BugManager.closeReportMap.put(event.getUser().getIdLong(), thread);
+
+        event
+                .replyModal(Modal.create("close-report", "報告をクローズ").addActionRows(ActionRow.of(messageRow)).build())
+                .queue();
     }
 }

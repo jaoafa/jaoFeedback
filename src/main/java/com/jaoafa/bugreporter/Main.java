@@ -51,6 +51,7 @@ public class Main {
                         new BugMenuSubmitEvent(),
                         new ChangeTitleSubmitEvent(),
                         new SendToIssueEvent(),
+                        new CloseReportEvent(),
                         new ThreadButtonEvent())
                 .build()
                 .awaitReady();

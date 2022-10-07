@@ -38,9 +38,10 @@ public class BugManager {
     public static Map<Long, Message> messageMap = new HashMap<>();
     public static Map<Long, ThreadChannel> changeTitleMap = new HashMap<>();
     public static Map<Long, ThreadChannel> sendToIssueMap = new HashMap<>();
+    public static Map<Long, ThreadChannel> closeReportMap = new HashMap<>();
     public static final Pattern ISSUE_PATTERN = Pattern.compile("^\\*(\\d+) ");
     public static final String TARGET_REACTION = "\uD83D\uDC1B"; // :bug:
-    public static final String REPOSITORY = "book000/playground";
+    public static final String REPOSITORY = "jaoafa/jao-Minecraft-Server";
     private final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
     private final Path REPORTS_PATH;
 

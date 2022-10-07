@@ -5,8 +5,8 @@ import com.jaoafa.bugreporter.lib.BugManager;
 import com.jaoafa.bugreporter.lib.Config;
 import com.jaoafa.bugreporter.lib.GitHub;
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.ThreadChannel;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -46,6 +46,10 @@ public class ThreadButtonEvent extends ListenerAdapter {
             // タイトルの変更
             actionChangeTitle(event, thread);
         }
+        if (event.getComponentId().equals("send-to-issue")) {
+            // GitHub Issueにメッセージを送信
+            actionSendToIssue(event, thread);
+        }
         if (event.getComponentId().equals("close-report")) {
             // Reportをクローズ
             actionCloseReport(event, thread);
@@ -67,15 +71,42 @@ public class ThreadButtonEvent extends ListenerAdapter {
             .create("new-title", "新しいタイトル", TextInputStyle.SHORT)
             .setPlaceholder("新しいタイトル")
             .setMinLength(3)
-            .setMaxLength(70)
-            .setRequired(true)
-            .build();
+                .setMaxLength(70)
+                .setRequired(true)
+                .build();
 
         BugManager.changeTitleMap.put(event.getUser().getIdLong(), thread);
 
         event
-            .replyModal(Modal.create("change-title", "報告タイトルの変更").addActionRows(ActionRow.of(newTitle)).build())
-            .queue();
+                .replyModal(Modal.create("change-title", "報告タイトルの変更").addActionRows(ActionRow.of(newTitle)).build())
+                .queue();
+    }
+
+    void actionSendToIssue(ButtonInteractionEvent event, ThreadChannel thread) {
+        if (thread.isLocked()) {
+            event.reply("このスレッドはすでにロックされています。").setEphemeral(true).queue();
+            return;
+        }
+        if (!PermissionUtil.checkPermission(thread.getPermissionContainer(),
+                Objects.requireNonNull(event.getMember()),
+                Permission.MESSAGE_SEND_IN_THREADS)) {
+            event.reply("あなたにはこのアクションを実行する権限がありません。").setEphemeral(true).queue();
+            return;
+        }
+
+        TextInput messageRow = TextInput
+                .create("content", "メッセージ", TextInputStyle.PARAGRAPH)
+                .setPlaceholder("送信するメッセージのコンテンツを入力")
+                .setMinLength(1)
+                .setMaxLength(2000)
+                .setRequired(true)
+                .build();
+
+        BugManager.sendToIssueMap.put(event.getUser().getIdLong(), thread);
+
+        event
+                .replyModal(Modal.create("send-to-issue", "Issueにメッセージを送信").addActionRows(ActionRow.of(messageRow)).build())
+                .queue();
     }
 
     void actionCloseReport(ButtonInteractionEvent event, ThreadChannel thread) {
@@ -84,8 +115,8 @@ public class ThreadButtonEvent extends ListenerAdapter {
             return;
         }
         if (!PermissionUtil.checkPermission(thread.getPermissionContainer(),
-                                            Objects.requireNonNull(event.getMember()),
-                                            Permission.MANAGE_THREADS)) {
+                Objects.requireNonNull(event.getMember()),
+                Permission.MANAGE_THREADS)) {
             event.reply("あなたにはこのアクションを実行する権限がありません。").setEphemeral(true).queue();
             return;
         }

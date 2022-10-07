@@ -59,27 +59,30 @@ public class GitHub {
             RequestBody requestBody = RequestBody.create(json.toString(),
                                                          MediaType.parse("application/json; charset=UTF-8"));
             Request request = new Request.Builder()
-                .url(url)
-                .header("Authorization", String.format("token %s", githubToken))
-                .post(requestBody)
-                .build();
+                    .url(url)
+                    .header("Authorization", String.format("token %s", githubToken))
+                    .post(requestBody)
+                    .build();
+            String htmlUrl;
             try (Response response = client.newCall(request).execute()) {
                 if (response.code() != 201) {
                     ResponseBody result = response.body();
                     String details = result != null ? result.string() : "";
                     Main.getLogger().error("GitHub.createIssueComment: " + details);
-                    return new CreateIssueCommentResult(details);
+                    return new CreateIssueCommentResult(null, details);
                 }
+                JSONObject obj = new JSONObject(Objects.requireNonNull(response.body()).string());
+                htmlUrl = obj.getString("html_url");
             }
 
-            return new CreateIssueCommentResult(null);
+            return new CreateIssueCommentResult(htmlUrl, null);
         } catch (IOException e) {
             e.printStackTrace();
-            return new CreateIssueCommentResult(e.getClass().getName() + " " + e.getMessage());
+            return new CreateIssueCommentResult(null, e.getClass().getName() + " " + e.getMessage());
         }
     }
 
-    public record CreateIssueCommentResult(String error) {
+    public record CreateIssueCommentResult(String htmlUrl, String error) {
     }
 
     public static UpdateIssueResult updateIssue(String repo, int issueNum, UpdateType type, Object value) {

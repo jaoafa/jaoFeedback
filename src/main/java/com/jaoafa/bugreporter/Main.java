@@ -45,12 +45,13 @@ public class Main {
                 .setBulkDeleteSplittingEnabled(false)
                 .setContextEnabled(false)
                 .addEventListeners(new EventWaiter(),
-                                   commandClient,
-                                   new DiscordReadyEvent(),
-                                   new BugReactionEvent(),
-                                   new BugMenuSubmitEvent(),
-                                   new ChangeTitleSubmitEvent(),
-                                   new ThreadButtonEvent())
+                        commandClient,
+                        new DiscordReadyEvent(),
+                        new BugReactionEvent(),
+                        new BugMenuSubmitEvent(),
+                        new ChangeTitleSubmitEvent(),
+                        new SendToIssueEvent(),
+                        new ThreadButtonEvent())
                 .build()
                 .awaitReady();
         } catch (Exception e) {

@@ -4,9 +4,9 @@ import com.jaoafa.bugreporter.Main;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.entities.ThreadChannel;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.Modal;
@@ -37,39 +37,40 @@ import java.util.regex.Pattern;
 public class BugManager {
     public static Map<Long, Message> messageMap = new HashMap<>();
     public static Map<Long, ThreadChannel> changeTitleMap = new HashMap<>();
+    public static Map<Long, ThreadChannel> sendToIssueMap = new HashMap<>();
     public static final Pattern ISSUE_PATTERN = Pattern.compile("^\\*(\\d+) ");
     public static final String TARGET_REACTION = "\uD83D\uDC1B"; // :bug:
-    public static final String REPOSITORY = "jaoafa/jao-Minecraft-Server";
+    public static final String REPOSITORY = "book000/playground";
     private final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
     private final Path REPORTS_PATH;
 
     public BugManager() {
         REPORTS_PATH = System.getenv("REPORTS_PATH") != null ?
-                       Path.of(System.getenv("REPORTS_PATH")) :
-                       Path.of("reports.json");
+                Path.of(System.getenv("REPORTS_PATH")) :
+                Path.of("reports.json");
     }
 
     public static Modal getModal() {
         TextInput title = TextInput
-            .create("title", "タイトル", TextInputStyle.SHORT)
-            .setPlaceholder("不具合についてのタイトル（簡単な説明）")
-            .setMinLength(3)
-            .setMaxLength(70)
-            .setRequired(true)
-            .build();
+                .create("title", "タイトル", TextInputStyle.SHORT)
+                .setPlaceholder("不具合についてのタイトル（簡単な説明）")
+                .setMinLength(3)
+                .setMaxLength(70)
+                .setRequired(true)
+                .build();
 
         TextInput description = TextInput
-            .create("description", "説明", TextInputStyle.PARAGRAPH)
-            .setPlaceholder("不具合についての詳しい説明（なぜ不具合だと思ったか、改善策など）")
-            .setMinLength(3)
-            .setMaxLength(1500)
-            .setRequired(true)
-            .build();
+                .create("description", "説明", TextInputStyle.PARAGRAPH)
+                .setPlaceholder("不具合についての詳しい説明（なぜ不具合だと思ったか、改善策など）")
+                .setMinLength(3)
+                .setMaxLength(1500)
+                .setRequired(true)
+                .build();
 
         return Modal
-            .create("bug-report", "不具合報告")
-            .addActionRows(ActionRow.of(title), ActionRow.of(description))
-            .build();
+                .create("bug-report", "不具合報告")
+                .addActionRows(ActionRow.of(title), ActionRow.of(description))
+                .build();
     }
 
     public boolean isReported(Message message) {
@@ -106,14 +107,14 @@ public class BugManager {
         }
 
         String threadTitle = (createIssueResult.error() == null ?
-                              "*" + createIssueResult.issueNumber() + " " :
-                              "") + title;
+                "*" + createIssueResult.issueNumber() + " " :
+                "") + title;
         ThreadChannel thread = createThread(threadTitle);
         thread.sendMessage(generateThreadStartMessage(message, createIssueResult, reporter, description)).queue();
         saveReport(new BugReport(message.getIdLong(),
-                                 new BugUser(reporter.getIdLong(), reporter.getName(), reporter.getDiscriminator()),
-                                 thread.getIdLong(),
-                                 createIssueResult.issueNumber()));
+                new BugUser(reporter.getIdLong(), reporter.getName(), reporter.getDiscriminator()),
+                thread.getIdLong(),
+                createIssueResult.issueNumber()));
         return thread;
     }
 
@@ -140,31 +141,32 @@ public class BugManager {
 
         ZonedDateTime createdAt = message.getTimeCreated().atZoneSameInstant(ZoneId.of("Asia/Tokyo"));
         EmbedBuilder builder = new EmbedBuilder()
-            .setTitle(":bug: 不具合報告")
-            .setTimestamp(Instant.now())
-            .setColor(Color.YELLOW);
+                .setTitle(":bug: 不具合報告")
+                .setTimestamp(Instant.now())
+                .setColor(Color.YELLOW);
         if (description == null) {
             builder.setFooter("投稿者、または報告者は不具合内容についての説明（何が不具合と思ったのか、期待される動作など）をお願いします。");
         } else {
             builder.addField("説明", description, false);
         }
         builder
-            .addField("対象メッセージ",
-                      "%s に送信された %s による %s でのメッセージ\n\n%s".formatted(createdAt.format(FORMATTER),
-                                                                    message.getAuthor().getAsMention(),
-                                                                    message.getChannel().getAsMention(),
-                                                                    message.getJumpUrl()),
-                      false)
-            .addField("不具合報告者", reporter.getAsMention(), false)
-            .addField("Issue URL",
-                      "https://github.com/%s/issues/%d".formatted(REPOSITORY, createIssueResult.issueNumber()), false);
+                .addField("対象メッセージ",
+                        "%s に送信された %s による %s でのメッセージ\n\n%s".formatted(createdAt.format(FORMATTER),
+                                message.getAuthor().getAsMention(),
+                                message.getChannel().getAsMention(),
+                                message.getJumpUrl()),
+                        false)
+                .addField("不具合報告者", reporter.getAsMention(), false)
+                .addField("Issue URL",
+                        "https://github.com/%s/issues/%d".formatted(REPOSITORY, createIssueResult.issueNumber()), false);
 
         return new MessageCreateBuilder()
-            .setContent(String.join("\n", messages))
-            .setEmbeds(builder.build())
-            .addActionRow(Button.primary("change-title", "報告タイトルの変更").withEmoji(Emoji.fromUnicode("\uD83D\uDD04")),
-                          Button.danger("close-report", "報告をクローズ").withEmoji(Emoji.fromUnicode("\uD83D\uDD10")))
-            .build();
+                .setContent(String.join("\n", messages))
+                .setEmbeds(builder.build())
+                .addActionRow(Button.primary("change-title", "報告タイトルの変更").withEmoji(Emoji.fromUnicode("\uD83D\uDD04")),
+                        Button.primary("send-to-issue", "Issueにメッセージを送信").withEmoji(Emoji.fromUnicode("\uD83D\uDCAC")),
+                        Button.danger("close-report", "報告をクローズ").withEmoji(Emoji.fromUnicode("\uD83D\uDD10")))
+                .build();
     }
 
     private List<BugReport> loadReports() {
@@ -201,26 +203,26 @@ public class BugManager {
                                       @Nullable String userDescription) {
         ZonedDateTime createdAt = message.getTimeCreated().atZoneSameInstant(ZoneId.of("Asia/Tokyo"));
         return """
-            %s
+                %s
+                                
+                ## 不具合と思われるメッセージ (または報告)
                             
-            ## 不具合と思われるメッセージ (または報告)
-                        
-            %s に送信された `%s` による `#%s` でのメッセージ
-                        
-            メッセージ URL: %s
-                        
-            ## 不具合報告者
-                        
-            `%s` (`%s`)
-            """
-            .formatted(userDescription,
-                       createdAt.format(FORMATTER),
-                       message.getAuthor().getAsTag(),
-                       message.getChannel().getName(),
-                       message.getJumpUrl(),
-                       reporter.getAsTag(),
-                       reporter.getId())
-            .trim();
+                %s に送信された `%s` による `#%s` でのメッセージ
+                            
+                メッセージ URL: %s
+                            
+                ## 不具合報告者
+                            
+                `%s` (`%s`)
+                """
+                .formatted(userDescription,
+                        createdAt.format(FORMATTER),
+                        message.getAuthor().getAsTag(),
+                        message.getChannel().getName(),
+                        message.getJumpUrl(),
+                        reporter.getAsTag(),
+                        reporter.getId())
+                .trim();
     }
 
     private ThreadChannel createThread(String threadName) {
@@ -237,17 +239,17 @@ public class BugManager {
     public record BugReport(long messageId, BugUser reporter, long threadId, int issueNumber) {
         JSONObject toJSON() {
             return new JSONObject()
-                .put("messageId", messageId)
-                .put("reporter", reporter.toJSON())
-                .put("threadId", threadId)
-                .put("issueNumber", issueNumber);
+                    .put("messageId", messageId)
+                    .put("reporter", reporter.toJSON())
+                    .put("threadId", threadId)
+                    .put("issueNumber", issueNumber);
         }
 
         static BugReport fromJSON(JSONObject json) {
             return new BugReport(json.getLong("messageId"),
-                                 BugUser.fromJSON(json.getJSONObject("reporter")),
-                                 json.getLong("threadId"),
-                                 json.getInt("issueNumber"));
+                    BugUser.fromJSON(json.getJSONObject("reporter")),
+                    json.getLong("threadId"),
+                    json.getInt("issueNumber"));
         }
     }
 

@@ -5,8 +5,9 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.forums.ForumPost;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.Modal;
@@ -15,11 +16,11 @@ import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.awt.*;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -86,10 +87,10 @@ public class BugManager {
         return reports.stream().filter(r -> r.messageId == message.getIdLong()).findAny().orElse(null);
     }
 
-    public ThreadChannel createReport(Message message,
-                                      User reporter,
-                                      String title,
-                                      @Nullable String description) throws BugReportException {
+    public ForumPost createReport(Message message,
+                                  User reporter,
+                                  String title,
+                                  @Nullable String description) throws BugReportException {
         if (title == null) {
             title = "%s による #%s での不具合報告".formatted(reporter.getAsTag(), message.getChannel().getName());
         }
@@ -102,21 +103,20 @@ public class BugManager {
         // スレッドを作成
         JDA jda = Main.getJDA();
         Config config = Main.getConfig();
-        TextChannel channel = jda.getTextChannelById(config.getChannelId());
+        ForumChannel channel = jda.getForumChannelById(config.getChannelId());
         if (channel == null) {
-            throw new BugReportException("スレッド用のチャンネルを見つけられませんでした。");
+            throw new BugReportException("フォーラムチャンネルを見つけられませんでした。");
         }
 
         String threadTitle = (createIssueResult.error() == null ?
                 "*" + createIssueResult.issueNumber() + " " :
                 "") + title;
-        ThreadChannel thread = createThread(threadTitle);
-        thread.sendMessage(generateThreadStartMessage(message, createIssueResult, reporter, description)).queue();
+        ForumPost forum = channel.createForumPost(threadTitle, generateThreadStartMessage(message, createIssueResult, reporter, description)).complete();
         saveReport(new BugReport(message.getIdLong(),
                 new BugUser(reporter.getIdLong(), reporter.getName(), reporter.getDiscriminator()),
-                thread.getIdLong(),
+                forum.getThreadChannel().getIdLong(),
                 createIssueResult.issueNumber()));
-        return thread;
+        return forum;
     }
 
     private MessageCreateData generateThreadStartMessage(Message message,
@@ -199,8 +199,8 @@ public class BugManager {
         }
     }
 
-    private String generateGitHubBody(@Nonnull Message message,
-                                      @Nonnull User reporter,
+    private String generateGitHubBody(@NotNull Message message,
+                                      @NotNull User reporter,
                                       @Nullable String userDescription) {
         ZonedDateTime createdAt = message.getTimeCreated().atZoneSameInstant(ZoneId.of("Asia/Tokyo"));
         return """
@@ -224,17 +224,6 @@ public class BugManager {
                         reporter.getAsTag(),
                         reporter.getId())
                 .trim();
-    }
-
-    private ThreadChannel createThread(String threadName) {
-        long channelId = Main.getConfig().getChannelId();
-        JDA jda = Main.getJDA();
-
-        TextChannel channel = jda.getTextChannelById(channelId);
-        if (channel == null) {
-            throw new NullPointerException("Get channel failed");
-        }
-        return channel.createThreadChannel(threadName).complete();
     }
 
     public record BugReport(long messageId, BugUser reporter, long threadId, int issueNumber) {

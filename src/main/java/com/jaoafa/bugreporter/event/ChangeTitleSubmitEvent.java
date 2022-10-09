@@ -7,14 +7,14 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.Objects;
 import java.util.regex.Matcher;
 
 public class ChangeTitleSubmitEvent extends ListenerAdapter {
     @Override
-    public void onModalInteraction(@Nonnull ModalInteractionEvent event) {
+    public void onModalInteraction(@NotNull ModalInteractionEvent event) {
         if (event.getGuild() == null || event.getGuild().getIdLong() != Main.getConfig().getGuildId()) {
             event.reply("このサーバでは利用できません。").setEphemeral(true).queue();
             return;

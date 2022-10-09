@@ -2,10 +2,10 @@ package com.jaoafa.bugreporter.lib;
 
 import com.jaoafa.bugreporter.Main;
 import okhttp3.*;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Objects;
@@ -48,7 +48,7 @@ public class GitHub {
     public record CreateIssueResult(int issueNumber, String error) {
     }
 
-    @Nonnull
+    @NotNull
     public static CreateIssueCommentResult createIssueComment(String repo, int issueNum, String body) {
         String githubToken = Main.getConfig().getGitHubAPIToken();
         String url = String.format("https://api.github.com/repos/%s/issues/%s/comments", repo, issueNum);

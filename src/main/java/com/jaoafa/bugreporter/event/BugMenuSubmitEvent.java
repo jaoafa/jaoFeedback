@@ -4,16 +4,15 @@ import com.jaoafa.bugreporter.Main;
 import com.jaoafa.bugreporter.lib.BugManager;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.forums.ForumPost;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
-import javax.annotation.Nonnull;
 import java.util.Objects;
 
 public class BugMenuSubmitEvent extends ListenerAdapter {
     @Override
-    public void onModalInteraction(@Nonnull ModalInteractionEvent event) {
+    public void onModalInteraction(ModalInteractionEvent event) {
         if (event.getGuild() == null || event.getGuild().getIdLong() != Main.getConfig().getGuildId()) {
             event.reply("このサーバでは利用できません。").setEphemeral(true).queue();
             return;
@@ -35,10 +34,10 @@ public class BugMenuSubmitEvent extends ListenerAdapter {
 
         BugManager bugManager = Main.getBugManager();
         try {
-            ThreadChannel thread = bugManager.createReport(targetMessage, reporter, title, description);
+            ForumPost forum = bugManager.createReport(targetMessage, reporter, title, description);
             event
-                .getHook()
-                .editOriginal("報告に成功しました！以降の対応は %s にて行われますのでご確認ください。".formatted(thread.getAsMention()))
+                    .getHook()
+                    .editOriginal("報告に成功しました！以降の対応は %s にて行われますのでご確認ください。".formatted(forum.getThreadChannel().getAsMention()))
                 .queue();
         } catch (BugManager.BugReportException e) {
             event

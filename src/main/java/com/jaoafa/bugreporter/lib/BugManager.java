@@ -42,7 +42,6 @@ public class BugManager {
     public static Map<Long, ThreadChannel> closeReportMap = new HashMap<>();
     public static final Pattern ISSUE_PATTERN = Pattern.compile("^\\*(\\d+) ");
     public static final String TARGET_REACTION = "\uD83D\uDC1B"; // :bug:
-    public static final String REPOSITORY = "jaoafa/jao-Minecraft-Server";
     private final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
     private final Path REPORTS_PATH;
 
@@ -98,7 +97,8 @@ public class BugManager {
         // Issueを作成
         String githubBody = generateGitHubBody(message, reporter, description);
 
-        GitHub.CreateIssueResult createIssueResult = GitHub.createIssue(REPOSITORY, title, githubBody);
+        String repository = Main.getConfig().getRepository();
+        GitHub.CreateIssueResult createIssueResult = GitHub.createIssue(repository, title, githubBody);
 
         // スレッドを作成
         JDA jda = Main.getJDA();
@@ -126,7 +126,8 @@ public class BugManager {
         List<String> messages = new ArrayList<>();
         if (createIssueResult.error() == null) {
             // Issueが作成できた場合はリンクさせる
-            messages.add("[LINKED-ISSUE:%s#%d]".formatted(REPOSITORY, createIssueResult.issueNumber()));
+            String repository = Main.getConfig().getRepository();
+            messages.add("[LINKED-ISSUE:%s#%d]".formatted(repository, createIssueResult.issueNumber()));
             messages.add("");
         }
         // 通知ロール + 報告者 + メッセージ送信者
@@ -150,6 +151,7 @@ public class BugManager {
         } else {
             builder.addField("説明", description, false);
         }
+        String repository = Main.getConfig().getRepository();
         builder
                 .addField("対象メッセージ",
                         "%s に送信された %s による %s でのメッセージ\n\n%s".formatted(createdAt.format(FORMATTER),
@@ -159,7 +161,7 @@ public class BugManager {
                         false)
                 .addField("不具合報告者", reporter.getAsMention(), false)
                 .addField("Issue URL",
-                        "https://github.com/%s/issues/%d".formatted(REPOSITORY, createIssueResult.issueNumber()), false);
+                        "https://github.com/%s/issues/%d".formatted(repository, createIssueResult.issueNumber()), false);
 
         return new MessageCreateBuilder()
                 .setContent(String.join("\n", messages))

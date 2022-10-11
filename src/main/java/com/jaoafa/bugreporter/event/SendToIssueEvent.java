@@ -43,7 +43,8 @@ public class SendToIssueEvent extends ListenerAdapter {
         if (issueNumber == -1) {
             return;
         }
-        GitHub.CreateIssueCommentResult result = GitHub.createIssueComment(BugManager.REPOSITORY, issueNumber, "%s\n\n`%s` によるメッセージ".formatted(content, user.getAsTag()));
+        String repository = Main.getConfig().getRepository();
+        GitHub.CreateIssueCommentResult result = GitHub.createIssueComment(repository, issueNumber, "%s\n\n`%s` によるメッセージ".formatted(content, user.getAsTag()));
 
         if (result.error() != null) {
             event.reply("GitHubへのメッセージの送信に失敗しました: ```%s```".formatted(result.error())).setEphemeral(true).queue();

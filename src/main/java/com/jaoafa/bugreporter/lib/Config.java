@@ -12,10 +12,10 @@ import java.nio.file.Files;
 public class Config {
     private final Logger logger;
     private final String token;
-    private final long ownerId;
     private final long guildId;
     private final long channelId;
     private final String githubAPIToken;
+    private final String repository;
 
     public Config() throws RuntimeException {
         logger = Main.getLogger();
@@ -36,17 +36,17 @@ public class Config {
 
             // - 必須項目の定義（ない場合、RuntimeExceptionが発生して進まない）
             requiredConfig(config, "token");
-            requiredConfig(config, "ownerId");
             requiredConfig(config, "guildId");
             requiredConfig(config, "channelId");
             requiredConfig(config, "githubAPIToken");
 
             // - 設定項目の取得
             token = config.getString("token");
-            ownerId = config.getLong("ownerId");
             guildId = config.getLong("guildId");
             channelId = config.getLong("channelId");
             githubAPIToken = config.getString("githubAPIToken");
+
+            repository = config.optString("repository", "jaoafa/jao-Minecraft-Server");
         } catch (IOException e) {
             logger.warn("コンフィグファイル config.json を読み取れませんでした: " + e.getMessage());
             e.printStackTrace();
@@ -70,10 +70,6 @@ public class Config {
         return token;
     }
 
-    public long getOwnerId() {
-        return ownerId;
-    }
-
     public long getGuildId() {
         return guildId;
     }
@@ -84,5 +80,9 @@ public class Config {
 
     public String getGitHubAPIToken() {
         return githubAPIToken;
+    }
+
+    public String getRepository() {
+        return repository;
     }
 }

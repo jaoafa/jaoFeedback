@@ -51,6 +51,7 @@ public class ChangeTitleSubmitEvent extends ListenerAdapter {
         if (issueNumber == -1) {
             return;
         }
-        GitHub.updateIssue(BugManager.REPOSITORY, issueNumber, GitHub.UpdateType.TITLE, newTitle);
+        String repository = Main.getConfig().getRepository();
+        GitHub.updateIssue(repository, issueNumber, GitHub.UpdateType.TITLE, newTitle);
     }
 }

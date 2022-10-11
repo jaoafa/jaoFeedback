@@ -48,11 +48,12 @@ public class CloseReportEvent extends ListenerAdapter {
         if (!matcher.find()) {
             return;
         }
+        String repository = Main.getConfig().getRepository();
         int issueNumber = Integer.parseInt(matcher.group(1));
-        GitHub.createIssueComment(BugManager.REPOSITORY,
+        GitHub.createIssueComment(repository,
                 issueNumber,
                 "`%s` がスレッドをクローズしたため、本 issue もクローズします。\n\n## 理由\n\n%s".formatted(user.getAsTag(), reason));
-        GitHub.updateIssue(BugManager.REPOSITORY, issueNumber, GitHub.UpdateType.STATE, "closed");
+        GitHub.updateIssue(repository, issueNumber, GitHub.UpdateType.STATE, "closed");
 
     }
 }

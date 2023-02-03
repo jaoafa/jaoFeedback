@@ -1,7 +1,7 @@
-package com.jaoafa.bugreporter.event;
+package com.jaoafa.feedback.event;
 
-import com.jaoafa.bugreporter.Main;
-import com.jaoafa.bugreporter.lib.BugManager;
+import com.jaoafa.feedback.Main;
+import com.jaoafa.feedback.lib.FeedbackManager;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.forums.ForumPost;
@@ -25,25 +25,19 @@ public class BugMenuSubmitEvent extends ListenerAdapter {
         String description = Objects.requireNonNull(event.getValue("description")).getAsString();
 
         User reporter = event.getUser();
-        Message targetMessage = BugManager.messageMap.get(reporter.getIdLong());
+        Message targetMessage = FeedbackManager.messageMap.get(reporter.getIdLong());
         if (targetMessage == null) {
             event.getHook().editOriginal("対象メッセージを見つけられませんでした。もう一度お試しください。").queue();
             return;
         }
-        BugManager.messageMap.remove(reporter.getIdLong());
+        FeedbackManager.messageMap.remove(reporter.getIdLong());
 
-        BugManager bugManager = Main.getBugManager();
+        FeedbackManager feedbackManager = Main.getFeedbackManager();
         try {
-            ForumPost forum = bugManager.createReport(targetMessage, reporter, title, description);
-            event
-                    .getHook()
-                    .editOriginal("報告に成功しました！以降の対応は %s にて行われますのでご確認ください。".formatted(forum.getThreadChannel().getAsMention()))
-                .queue();
-        } catch (BugManager.BugReportException e) {
-            event
-                .getHook()
-                .editOriginal("不具合報告に失敗しました: `%s %s`".formatted(e.getClass().getName(), e.getMessage()))
-                .queue();
+            ForumPost forum = feedbackManager.createBugReport(targetMessage, reporter, title, description);
+            event.getHook().editOriginal("報告に成功しました！以降の対応は %s にて行われますのでご確認ください。".formatted(forum.getThreadChannel().getAsMention())).queue();
+        } catch (FeedbackManager.FeedbackException e) {
+            event.getHook().editOriginal("不具合報告に失敗しました: `%s %s`".formatted(e.getClass().getName(), e.getMessage())).queue();
         }
     }
 }

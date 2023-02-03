@@ -1,6 +1,6 @@
-package com.jaoafa.bugreporter.lib;
+package com.jaoafa.feedback.lib;
 
-import com.jaoafa.bugreporter.Main;
+import com.jaoafa.feedback.Main;
 import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
@@ -11,13 +11,13 @@ import java.util.Locale;
 import java.util.Objects;
 
 public class GitHub {
-    public static CreateIssueResult createIssue(String repo, String title, String body) {
+    public static CreateIssueResult createIssue(String repo, String title, String body, JSONArray labels) {
         String githubToken = Main.getConfig().getGitHubAPIToken();
         String url = String.format("https://api.github.com/repos/%s/issues", repo);
         JSONObject json = new JSONObject()
-            .put("title", title)
-            .put("body", body)
-            .put("labels", new JSONArray().put("\uD83D\uDC1Bbug"));
+                .put("title", title)
+                .put("body", body)
+                .put("labels", labels);
 
         try {
             OkHttpClient client = new OkHttpClient();

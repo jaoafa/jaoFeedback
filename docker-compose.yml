@@ -7,8 +7,5 @@ services:
       - type: bind
         source: ./data/
         target: /data/
-    environment:
-      CONFIG_PATH: /data/config.json
-      REPORTS_PATH: /data/reports.json
     restart: always
     init: true

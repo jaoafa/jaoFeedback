@@ -1,7 +1,9 @@
-package com.jaoafa.bugreporter.event;
+package com.jaoafa.feedback.event;
 
-import com.jaoafa.bugreporter.Main;
-import com.jaoafa.bugreporter.menu.BugMenu;
+import com.jaoafa.feedback.Main;
+import com.jaoafa.feedback.menu.BugMenu;
+import com.jaoafa.feedback.menu.FeatureMenu;
+import com.jaoafa.feedback.menu.ImprovementMenu;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
@@ -27,5 +29,7 @@ public class DiscordReadyEvent extends ListenerAdapter {
 
         // メニューなどの登録
         BugMenu.register(jda);
+        FeatureMenu.register(jda);
+        ImprovementMenu.register(jda);
     }
 }

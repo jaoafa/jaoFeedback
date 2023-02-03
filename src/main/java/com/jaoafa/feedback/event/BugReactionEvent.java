@@ -1,7 +1,8 @@
-package com.jaoafa.bugreporter.event;
+package com.jaoafa.feedback.event;
 
-import com.jaoafa.bugreporter.Main;
-import com.jaoafa.bugreporter.lib.BugManager;
+import com.jaoafa.feedback.Main;
+import com.jaoafa.feedback.lib.FeedbackManager;
+import com.jaoafa.feedback.lib.FeedbackModel;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
@@ -35,7 +36,7 @@ public class BugReactionEvent extends ListenerAdapter {
         if (emoji.getType() != Emoji.Type.UNICODE) {
             return;
         }
-        String targetReaction = BugManager.TARGET_REACTION;
+        String targetReaction = FeedbackModel.BUG_TARGET_REACTION;
         if (!emoji.asUnicode().getName().equals(targetReaction)) {
             return;
         }
@@ -49,27 +50,27 @@ public class BugReactionEvent extends ListenerAdapter {
         }
         MessageChannelUnion channel = event.getChannel();
 
-        BugManager bugManager = Main.getBugManager();
+        FeedbackManager feedbackManager = Main.getFeedbackManager();
 
-        if (bugManager.isReported(message)) {
+        if (feedbackManager.isAlreadyFeedback(message)) {
             channel
-                .sendMessage("%s, この不具合はすでに報告済みです。".formatted(user.getAsMention()))
-                .delay(1, TimeUnit.MINUTES, Main.getScheduler()) // delete 1 minute later
-                .flatMap(Message::delete)
-                .queue();
+                    .sendMessage("%s, この不具合はすでに報告済みです。".formatted(user.getAsMention()))
+                    .delay(1, TimeUnit.MINUTES, Main.getScheduler()) // delete 1 minute later
+                    .flatMap(Message::delete)
+                    .queue();
             return;
         }
 
         try {
-            bugManager.createReport(message, user, null, null);
-        } catch (BugManager.BugReportException e) {
+            feedbackManager.createBugReport(message, user, null, null);
+        } catch (FeedbackManager.FeedbackException e) {
             channel
-                .sendMessage("%s, 不具合報告に失敗しました: `%s %s`".formatted(user.getAsMention(),
-                                                                   e.getClass().getName(),
-                                                                   e.getMessage()))
-                .delay(1, TimeUnit.MINUTES, Main.getScheduler()) // delete 1 minute later
-                .flatMap(Message::delete)
-                .queue();
+                    .sendMessage("%s, 不具合報告に失敗しました: `%s %s`".formatted(user.getAsMention(),
+                            e.getClass().getName(),
+                            e.getMessage()))
+                    .delay(1, TimeUnit.MINUTES, Main.getScheduler()) // delete 1 minute later
+                    .flatMap(Message::delete)
+                    .queue();
         }
 
         message.addReaction(Emoji.fromUnicode(targetReaction)).queue();

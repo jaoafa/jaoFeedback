@@ -1,7 +1,8 @@
-package com.jaoafa.bugreporter.menu;
+package com.jaoafa.feedback.menu;
 
-import com.jaoafa.bugreporter.Main;
-import com.jaoafa.bugreporter.lib.BugManager;
+import com.jaoafa.feedback.Main;
+import com.jaoafa.feedback.lib.FeedbackManager;
+import com.jaoafa.feedback.lib.FeedbackModel;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
@@ -30,21 +31,21 @@ public class BugMenu extends ListenerAdapter {
             return;
         }
         Message message = event.getTarget();
-        List<User> users = message.retrieveReactionUsers(Emoji.fromUnicode(BugManager.TARGET_REACTION)).complete();
+        List<User> users = message.retrieveReactionUsers(Emoji.fromUnicode(FeedbackModel.BUG_TARGET_REACTION)).complete();
         if (users.size() > 0) {
             // 1人以上 = 既に報告済み
             event.reply("このメッセージはすでに報告済みです。").setEphemeral(true).queue();
             return;
         }
 
-        BugManager bugManager = Main.getBugManager();
-        if (bugManager.isReported(message)) {
+        FeedbackManager feedbackManager = new FeedbackManager();
+        if (feedbackManager.isAlreadyFeedback(message)) {
             event.reply("このメッセージはすでに報告済みです。").setEphemeral(true).queue();
             return;
         }
 
-        BugManager.messageMap.put(event.getUser().getIdLong(), message);
+        FeedbackManager.messageMap.put(event.getUser().getIdLong(), message);
 
-        event.replyModal(BugManager.getModal()).queue();
+        event.replyModal(FeedbackModel.BugReportModal).queue();
     }
 }

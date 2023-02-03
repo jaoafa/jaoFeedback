@@ -1,17 +1,17 @@
-package com.jaoafa.bugreporter.event;
+package com.jaoafa.feedback.event;
 
-import com.jaoafa.bugreporter.Main;
-import com.jaoafa.bugreporter.lib.BugManager;
-import com.jaoafa.bugreporter.lib.Config;
+import com.jaoafa.feedback.Main;
+import com.jaoafa.feedback.lib.Config;
+import com.jaoafa.feedback.lib.FeedbackManager;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.Modal;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
+import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,8 +23,8 @@ public class ThreadButtonEvent extends ListenerAdapter {
     public void onButtonInteraction(@NotNull ButtonInteractionEvent event) {
         Config config = Main.getConfig();
         if (event.getGuild() == null || event.getMember() == null || event
-            .getGuild()
-            .getIdLong() != config.getGuildId()) {
+                .getGuild()
+                .getIdLong() != config.getGuildId()) {
             event.reply("このサーバでは利用できません。").setEphemeral(true).queue();
             return;
         }
@@ -59,23 +59,22 @@ public class ThreadButtonEvent extends ListenerAdapter {
             return;
         }
         if (!PermissionUtil.checkPermission(thread.getPermissionContainer(),
-                                            Objects.requireNonNull(event.getMember()),
-                                            Permission.MANAGE_THREADS)) {
+                Objects.requireNonNull(event.getMember()),
+                Permission.MANAGE_THREADS)) {
             event.reply("あなたにはこのアクションを実行する権限がありません。").setEphemeral(true).queue();
             return;
         }
         TextInput newTitle = TextInput
-            .create("new-title", "新しいタイトル", TextInputStyle.SHORT)
-            .setPlaceholder("新しいタイトル")
-            .setMinLength(3)
+                .create("new-title", "新しいタイトル", TextInputStyle.SHORT)
+                .setPlaceholder("新しいタイトル")
+                .setMinLength(3)
                 .setMaxLength(70)
                 .setRequired(true)
                 .build();
 
-        BugManager.changeTitleMap.put(event.getUser().getIdLong(), thread);
+        FeedbackManager.changeTitleMap.put(event.getUser().getIdLong(), thread);
 
-        event
-                .replyModal(Modal.create("change-title", "報告タイトルの変更").addActionRows(ActionRow.of(newTitle)).build())
+        event.replyModal(Modal.create("change-title", "タイトルの変更").addActionRows(ActionRow.of(newTitle)).build())
                 .queue();
     }
 
@@ -99,10 +98,9 @@ public class ThreadButtonEvent extends ListenerAdapter {
                 .setRequired(true)
                 .build();
 
-        BugManager.sendToIssueMap.put(event.getUser().getIdLong(), thread);
+        FeedbackManager.sendToIssueMap.put(event.getUser().getIdLong(), thread);
 
-        event
-                .replyModal(Modal.create("send-to-issue", "Issueにメッセージを送信").addActionRows(ActionRow.of(messageRow)).build())
+        event.replyModal(Modal.create("send-to-issue", "Issueにメッセージを送信").addActionRows(ActionRow.of(messageRow)).build())
                 .queue();
     }
 
@@ -119,17 +117,16 @@ public class ThreadButtonEvent extends ListenerAdapter {
         }
 
         TextInput messageRow = TextInput
-                .create("close-reason", "報告を閉じる理由", TextInputStyle.PARAGRAPH)
-                .setPlaceholder("報告を閉じる理由を入力してください（XXXXXで修正した・対応の必要がない など）")
+                .create("close-reason", "リクエスト/報告を閉じる理由", TextInputStyle.PARAGRAPH)
+                .setPlaceholder("リクエスト/報告を閉じる理由を入力してください（XXXXXで修正した・対応の必要がない など）")
                 .setMinLength(1)
                 .setMaxLength(2000)
                 .setRequired(true)
                 .build();
 
-        BugManager.closeReportMap.put(event.getUser().getIdLong(), thread);
+        FeedbackManager.closeReportMap.put(event.getUser().getIdLong(), thread);
 
-        event
-                .replyModal(Modal.create("close-report", "報告をクローズ").addActionRows(ActionRow.of(messageRow)).build())
+        event.replyModal(Modal.create("close-report", "リクエスト/報告をクローズ").addActionRows(ActionRow.of(messageRow)).build())
                 .queue();
     }
 }

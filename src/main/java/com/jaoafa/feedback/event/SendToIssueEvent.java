@@ -1,8 +1,8 @@
-package com.jaoafa.bugreporter.event;
+package com.jaoafa.feedback.event;
 
-import com.jaoafa.bugreporter.Main;
-import com.jaoafa.bugreporter.lib.BugManager;
-import com.jaoafa.bugreporter.lib.GitHub;
+import com.jaoafa.feedback.Main;
+import com.jaoafa.feedback.lib.FeedbackManager;
+import com.jaoafa.feedback.lib.GitHub;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
@@ -26,16 +26,16 @@ public class SendToIssueEvent extends ListenerAdapter {
         String content = Objects.requireNonNull(event.getValue("content")).getAsString();
 
         User user = event.getUser();
-        ThreadChannel thread = BugManager.sendToIssueMap.get(user.getIdLong());
+        ThreadChannel thread = FeedbackManager.sendToIssueMap.get(user.getIdLong());
         if (thread == null) {
             event.reply("対象スレッドを見つけられませんでした。もう一度お試しください。").queue();
             return;
         }
-        BugManager.sendToIssueMap.remove(user.getIdLong());
+        FeedbackManager.sendToIssueMap.remove(user.getIdLong());
 
         int issueNumber = -1;
         String prevTitle = thread.getName();
-        Matcher matcher = BugManager.ISSUE_PATTERN.matcher(prevTitle);
+        Matcher matcher = FeedbackManager.ISSUE_PATTERN.matcher(prevTitle);
         if (matcher.find()) {
             issueNumber = Integer.parseInt(matcher.group(1));
         }

@@ -33,7 +33,7 @@ jobs:
     with:
       targets: >-
         [
-          { imageName: "jaoafa/jaoFeedback", context: ".", file: "Dockerfile", packageName: "jao-feedback" }
+          { imageName: "jaoafa/jaofeedback", context: ".", file: "Dockerfile", packageName: "jaofeedback" }
         ]
     secrets:
       DOCKER_USERNAME: ${{ github.actor }}

@@ -1,6 +1,6 @@
-package com.jaoafa.bugreporter.lib;
+package com.jaoafa.feedback.lib;
 
-import com.jaoafa.bugreporter.Main;
+import com.jaoafa.feedback.Main;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;

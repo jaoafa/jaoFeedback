@@ -11,7 +11,10 @@ FROM amazoncorretto:19
 
 WORKDIR /app
 
-COPY --from=builder /build/target/BugReporter-jar-with-dependencies.jar .
+COPY --from=builder /build/target/jaoFeedback-jar-with-dependencies.jar .
+
+ENV FEEDBACKS_PATH /data/feedbacks.json
+ENV CONFIG_PATH /data/config.json
 
 ENTRYPOINT []
-CMD ["java", "-jar", "BugReporter-jar-with-dependencies.jar"]
+CMD ["java", "-jar", "jaoFeedback-jar-with-dependencies.jar"]

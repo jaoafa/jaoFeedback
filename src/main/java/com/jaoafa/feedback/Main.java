@@ -1,9 +1,11 @@
-package com.jaoafa.bugreporter;
+package com.jaoafa.feedback;
 
-import com.jaoafa.bugreporter.event.*;
-import com.jaoafa.bugreporter.lib.BugManager;
-import com.jaoafa.bugreporter.lib.Config;
-import com.jaoafa.bugreporter.menu.BugMenu;
+import com.jaoafa.feedback.event.*;
+import com.jaoafa.feedback.lib.Config;
+import com.jaoafa.feedback.lib.FeedbackManager;
+import com.jaoafa.feedback.menu.BugMenu;
+import com.jaoafa.feedback.menu.FeatureMenu;
+import com.jaoafa.feedback.menu.ImprovementMenu;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.requests.GatewayIntent;
@@ -18,7 +20,7 @@ public class Main {
 
     static JDA jda;
     static Config config;
-    static BugManager bugManager;
+    static FeedbackManager feedbackManager;
     static ScheduledExecutorService scheduler;
 
     public static void main(String[] args) {
@@ -35,21 +37,25 @@ public class Main {
                     .setContextEnabled(false)
                     .addEventListeners(
                             new BugMenu(),
+                            new FeatureMenu(),
+                            new ImprovementMenu(),
                             new DiscordReadyEvent(),
                             new BugReactionEvent(),
                             new BugMenuSubmitEvent(),
+                            new FeatureMenuSubmitEvent(),
+                            new ImprovementMenuSubmitEvent(),
                             new ChangeTitleSubmitEvent(),
                             new SendToIssueEvent(),
                             new CloseReportEvent(),
                             new ThreadButtonEvent())
-                .build()
-                .awaitReady();
+                    .build()
+                    .awaitReady();
         } catch (Exception e) {
             e.printStackTrace();
             return;
         }
 
-        bugManager = new BugManager();
+        feedbackManager = new FeedbackManager();
         scheduler = Executors.newSingleThreadScheduledExecutor();
 
         logger.info("Started BugReporter.");
@@ -67,8 +73,8 @@ public class Main {
         return config;
     }
 
-    public static BugManager getBugManager() {
-        return bugManager;
+    public static FeedbackManager getFeedbackManager() {
+        return feedbackManager;
     }
 
     public static ScheduledExecutorService getScheduler() {

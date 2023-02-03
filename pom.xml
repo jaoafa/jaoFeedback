@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.jaoafa</groupId>
-    <artifactId>bugreporter</artifactId>
+    <artifactId>feedback</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
@@ -31,13 +31,13 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>3.4.2</version>
                 <configuration>
-                    <finalName>BugReporter</finalName>
+                    <finalName>jaoFeedback</finalName>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>com.jaoafa.bugreporter.Main</mainClass>
+                            <mainClass>com.jaoafa.feedback.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

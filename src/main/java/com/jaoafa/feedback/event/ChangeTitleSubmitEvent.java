@@ -1,8 +1,8 @@
-package com.jaoafa.bugreporter.event;
+package com.jaoafa.feedback.event;
 
-import com.jaoafa.bugreporter.Main;
-import com.jaoafa.bugreporter.lib.BugManager;
-import com.jaoafa.bugreporter.lib.GitHub;
+import com.jaoafa.feedback.Main;
+import com.jaoafa.feedback.lib.FeedbackManager;
+import com.jaoafa.feedback.lib.GitHub;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
@@ -25,19 +25,19 @@ public class ChangeTitleSubmitEvent extends ListenerAdapter {
         String newTitle = Objects.requireNonNull(event.getValue("new-title")).getAsString();
 
         User user = event.getUser();
-        ThreadChannel thread = BugManager.changeTitleMap.get(user.getIdLong());
+        ThreadChannel thread = FeedbackManager.changeTitleMap.get(user.getIdLong());
         if (thread == null) {
             event.reply("対象スレッドを見つけられませんでした。もう一度お試しください。").queue();
             return;
         }
-        BugManager.changeTitleMap.remove(user.getIdLong());
+        FeedbackManager.changeTitleMap.remove(user.getIdLong());
 
         event.deferEdit().queue();
 
         String threadTitle;
         int issueNumber = -1;
         String prevTitle = thread.getName();
-        Matcher matcher = BugManager.ISSUE_PATTERN.matcher(prevTitle);
+        Matcher matcher = FeedbackManager.ISSUE_PATTERN.matcher(prevTitle);
         if (matcher.find()) {
             issueNumber = Integer.parseInt(matcher.group(1));
             threadTitle = "*%d %s".formatted(issueNumber, newTitle);

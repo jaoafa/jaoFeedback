@@ -1,8 +1,8 @@
-package com.jaoafa.bugreporter.event;
+package com.jaoafa.feedback.event;
 
-import com.jaoafa.bugreporter.Main;
-import com.jaoafa.bugreporter.lib.BugManager;
-import com.jaoafa.bugreporter.lib.GitHub;
+import com.jaoafa.feedback.Main;
+import com.jaoafa.feedback.lib.FeedbackManager;
+import com.jaoafa.feedback.lib.GitHub;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
@@ -26,25 +26,25 @@ public class CloseReportEvent extends ListenerAdapter {
         String reason = Objects.requireNonNull(event.getValue("close-reason")).getAsString().trim();
 
         User user = event.getUser();
-        ThreadChannel thread = BugManager.closeReportMap.get(user.getIdLong());
+        ThreadChannel thread = FeedbackManager.closeReportMap.get(user.getIdLong());
         if (thread == null) {
             event.reply("対象スレッドを見つけられませんでした。もう一度お試しください。").queue();
             return;
         }
-        BugManager.closeReportMap.remove(user.getIdLong());
+        FeedbackManager.closeReportMap.remove(user.getIdLong());
 
         event.deferEdit().queue();
 
         thread.sendMessageEmbeds(new EmbedBuilder()
-                .setTitle("報告がクローズされました")
-                .setDescription("`%s` のアクションにより、報告をクローズしました。".formatted(user.getAsTag()))
+                .setTitle("リクエスト/報告がクローズされました")
+                .setDescription("`%s` のアクションにより、クローズしました。".formatted(user.getAsTag()))
                 .addField("理由", reason, false)
-                .setFooter("スレッドの管理権限のあるユーザーはメッセージ送信などでスレッドを再開できますが、原則再開させずに新規で報告を立ち上げてください。")
+                .setFooter("スレッドの管理権限のあるユーザーはメッセージ送信などでスレッドを再開できますが、原則再開させずに新規でリクエスト/報告を立ち上げてください。")
                 .setColor(Color.RED)
                 .build()).complete();
         thread.getManager().setArchived(true).setLocked(true).queue();
 
-        Matcher matcher = BugManager.ISSUE_PATTERN.matcher(thread.getName());
+        Matcher matcher = FeedbackManager.ISSUE_PATTERN.matcher(thread.getName());
         if (!matcher.find()) {
             return;
         }

@@ -22,5 +22,5 @@
         <appender-ref ref="FILE"/>
     </root>
 
-    <logger name="com.jaoafa.bugreporter" level="INFO"/>
+    <logger name="com.jaoafa.feedback" level="INFO"/>
 </configuration>

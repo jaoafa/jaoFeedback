@@ -160,6 +160,7 @@ public class FeedbackManager {
                 .setContent(String.join("\n", messages))
                 .setEmbeds(embed)
                 .addComponents(FeedbackModel.FeedbackActionRow)
+                .setSuppressedNotifications(true)
                 .build();
     }
 

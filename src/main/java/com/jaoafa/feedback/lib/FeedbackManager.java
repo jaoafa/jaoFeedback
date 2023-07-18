@@ -18,10 +18,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 
 public class FeedbackManager {
@@ -101,17 +98,17 @@ public class FeedbackManager {
 
     public ForumPost createBugReport(@Nullable Message message,
                                      @NotNull User reporter,
-                                     @Nullable String title,
-                                     @Nullable String description) throws FeedbackException {
-        if (title == null && message != null) {
+                                     @Nullable String inputTitle,
+                                     @Nullable String inputDescription) throws FeedbackException {
+        String title = inputTitle;
+        String description;
+        if (inputTitle == null && message != null) {
             title = "%s による #%s での不具合報告".formatted(reporter.getAsTag(), message.getChannel().getName());
         }
         if (title == null && message == null) {
             title = "%s による不具合報告".formatted(reporter.getAsTag());
         }
-        if (description == null) {
-            description = "NULL";
-        }
+        description = Objects.requireNonNullElse(inputDescription, "NULL");
 
         // Issueを作成
         String githubBody = FeedbackModel.getBugReportIssueBody(description, message, reporter);
@@ -131,6 +128,12 @@ public class FeedbackManager {
         MessageEmbed embed = FeedbackModel.getBugReportEmbed(description, message, reporter, createIssueResult);
         MessageCreateData forumStartMessage = getForumStartMessage(message, reporter, embed, createIssueResult);
         ForumPost forum = channel.createForumPost(threadTitle, forumStartMessage).complete();
+
+        if (title == null) {
+            // リアクションなどでタイトルがnullの場合、詳細情報を示してもらえるようメッセージを送る
+            forum.getThreadChannel().sendMessage(getNeedDetailsReplyMessage(reporter)).queue();
+        }
+
         saveFeedback(new Feedback(FeedbackType.BUG_REPORT,
                 message != null ? message.getIdLong() : -1,
                 new FeedbackUser(reporter.getIdLong(), reporter.getName(), reporter.getDiscriminator()),
@@ -161,6 +164,13 @@ public class FeedbackManager {
                 .setEmbeds(embed)
                 .addComponents(FeedbackModel.FeedbackActionRow)
                 .setSuppressedNotifications(true)
+                .build();
+    }
+
+    private MessageCreateData getNeedDetailsReplyMessage(User user) {
+        return new MessageCreateBuilder()
+                .setContent("この報告には詳細情報が含まれていません。このメッセージについて、なぜ不具合だと思ったか、改善策などについて投稿いただけませんか？")
+                .mention(user)
                 .build();
     }
 

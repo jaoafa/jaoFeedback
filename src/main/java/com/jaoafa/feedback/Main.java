@@ -16,7 +16,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class Main {
-    static final Logger logger = LoggerFactory.getLogger("Javajaotan2");
+    static final Logger logger = LoggerFactory.getLogger("jaoFeedback");
 
     static JDA jda;
     static Config config;
@@ -24,7 +24,7 @@ public class Main {
     static ScheduledExecutorService scheduler;
 
     public static void main(String[] args) {
-        logger.info("Starting BugReporter...");
+        logger.info("Starting jaoFeedback...");
 
         config = new Config();
 
@@ -58,7 +58,7 @@ public class Main {
         feedbackManager = new FeedbackManager();
         scheduler = Executors.newSingleThreadScheduledExecutor();
 
-        logger.info("Started BugReporter.");
+        logger.info("Started jaoFeedback.");
     }
 
     public static Logger getLogger() {

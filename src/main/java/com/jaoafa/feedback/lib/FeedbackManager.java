@@ -129,7 +129,7 @@ public class FeedbackManager {
         MessageCreateData forumStartMessage = getForumStartMessage(message, reporter, embed, createIssueResult);
         ForumPost forum = channel.createForumPost(threadTitle, forumStartMessage).complete();
 
-        if (title == null) {
+        if (inputTitle == null) {
             // リアクションなどでタイトルがnullの場合、詳細情報を示してもらえるようメッセージを送る
             forum.getThreadChannel().sendMessage(getNeedDetailsReplyMessage(reporter)).queue();
         }

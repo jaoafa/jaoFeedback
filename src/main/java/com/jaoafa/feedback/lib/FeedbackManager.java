@@ -129,7 +129,7 @@ public class FeedbackManager {
         MessageCreateData forumStartMessage = getForumStartMessage(message, reporter, embed, createIssueResult);
         ForumPost forum = channel.createForumPost(threadTitle, forumStartMessage).complete();
 
-        if (title == null) {
+        if (inputTitle == null) {
             // リアクションなどでタイトルがnullの場合、詳細情報を示してもらえるようメッセージを送る
             forum.getThreadChannel().sendMessage(getNeedDetailsReplyMessage(reporter)).queue();
         }
@@ -169,7 +169,7 @@ public class FeedbackManager {
 
     private MessageCreateData getNeedDetailsReplyMessage(User user) {
         return new MessageCreateBuilder()
-                .setContent("この報告には詳細情報が含まれていません。このメッセージについて、なぜ不具合だと思ったか、改善策などについて投稿いただけませんか？")
+                .setContent("<@" + user.getId() + "> この報告には詳細情報が含まれていません。このメッセージについて、なぜ不具合だと思ったか、改善策などについて投稿いただけませんか？")
                 .mention(user)
                 .build();
     }

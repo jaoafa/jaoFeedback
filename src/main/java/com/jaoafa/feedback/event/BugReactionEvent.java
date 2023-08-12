@@ -5,6 +5,7 @@ import com.jaoafa.feedback.lib.FeedbackManager;
 import com.jaoafa.feedback.lib.FeedbackModel;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.forums.ForumPost;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.entities.emoji.EmojiUnion;
@@ -61,8 +62,9 @@ public class BugReactionEvent extends ListenerAdapter {
             return;
         }
 
+        ForumPost forum;
         try {
-            feedbackManager.createBugReport(message, user, null, null);
+            forum = feedbackManager.createBugReport(message, user, null, null);
         } catch (FeedbackManager.FeedbackException e) {
             channel
                     .sendMessage("%s, 不具合報告に失敗しました: `%s %s`".formatted(user.getAsMention(),
@@ -71,9 +73,15 @@ public class BugReactionEvent extends ListenerAdapter {
                     .delay(1, TimeUnit.MINUTES, Main.getScheduler()) // delete 1 minute later
                     .flatMap(Message::delete)
                     .queue();
+            return;
         }
 
         message.addReaction(Emoji.fromUnicode(targetReaction)).queue();
+        channel
+                .sendMessage("%s, 不具合報告いただきありがとうございます！\nなぜ不具合だと思ったか、改善策などについて %s へ投稿いただけませんか？".formatted(user.getAsMention(), forum.getThreadChannel().getAsMention()))
+                .delay(1, TimeUnit.MINUTES, Main.getScheduler()) // delete 1 minute later
+                .flatMap(Message::delete)
+                .queue();
     }
 }
 

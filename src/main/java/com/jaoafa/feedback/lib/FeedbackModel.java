@@ -21,6 +21,8 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class FeedbackModel {
     public static final String BUG_TARGET_REACTION = "\uD83D\uDC1B"; // :bug:
@@ -184,12 +186,27 @@ public class FeedbackModel {
                 .addField("説明", description, false);
         if (message != null) {
             ZonedDateTime createdAt = message.getTimeCreated().atZoneSameInstant(ZoneId.of("Asia/Tokyo"));
+            String content = message.getContentRaw();
+            content = content.length() > 100 ? content.substring(0, 100) + "..." : content;
+            content = "> " + content.replaceAll("\n", "\n> ");
+            String embedContent = message.getEmbeds().stream()
+                    .map(MessageEmbed::getDescription)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.joining("\n"));
+            if (!embedContent.isEmpty()) {
+                embedContent = embedContent.length() > 100 ? embedContent.substring(0, 100) + "..." : embedContent;
+                embedContent = "> " + embedContent.replaceAll("\n", "\n> ");
+                content += "\n\n" + embedContent;
+            }
+
             builder.addField("対象メッセージ",
                     "%s に送信された %s による %s でのメッセージ\n\n%s".formatted(createdAt.format(FORMATTER),
                             message.getAuthor().getAsMention(),
                             message.getChannel().getAsMention(),
-                            message.getJumpUrl()),
+                            message.getJumpUrl()
+                    ),
                     false);
+            builder.addField("対象メッセージの内容", content, false);
         }
         builder.addField(getIssueUrlField(createIssueResult));
         return builder.build();

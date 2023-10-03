@@ -20,7 +20,7 @@ public class ImprovementMenuSubmitEvent extends ListenerAdapter {
         if (!event.getModalId().equals("improvement-request")) {
             return;
         }
-        event.deferReply(true).queue();
+        event.deferReply(false).queue();
         String title = Objects.requireNonNull(event.getValue("title")).getAsString();
         String target = Objects.requireNonNull(event.getValue("target")).getAsString();
         String description = Objects.requireNonNull(event.getValue("description")).getAsString();

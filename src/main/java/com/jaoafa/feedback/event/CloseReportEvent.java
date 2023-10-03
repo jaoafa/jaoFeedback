@@ -37,7 +37,7 @@ public class CloseReportEvent extends ListenerAdapter {
 
         thread.sendMessageEmbeds(new EmbedBuilder()
                 .setTitle("リクエスト/報告がクローズされました")
-                .setDescription("`%s` のアクションにより、クローズしました。".formatted(user.getAsTag()))
+                .setDescription("`%s` のアクションにより、クローズしました。".formatted(user.getName()))
                 .addField("理由", reason, false)
                 .setFooter("スレッドの管理権限のあるユーザーはメッセージ送信などでスレッドを再開できますが、原則再開させずに新規でリクエスト/報告を立ち上げてください。")
                 .setColor(Color.RED)
@@ -52,8 +52,10 @@ public class CloseReportEvent extends ListenerAdapter {
         int issueNumber = Integer.parseInt(matcher.group(1));
         GitHub.createIssueComment(repository,
                 issueNumber,
-                "`%s` がスレッドをクローズしたため、本 issue もクローズします。\n\n## 理由\n\n%s".formatted(user.getAsTag(), reason));
-        GitHub.updateIssue(repository, issueNumber, GitHub.UpdateType.STATE, "closed");
-
+                "`%s` がスレッドをクローズしたため、本 issue もクローズします。\n\n## 理由\n\n%s".formatted(user.getName(), reason));
+        GitHub.UpdateIssueResult result = GitHub.updateIssue(repository, issueNumber, GitHub.UpdateType.STATE, "closed");
+        if (result.error() != null) {
+            Main.getLogger().error("Failed to close issue: " + result.error());
+        }
     }
 }

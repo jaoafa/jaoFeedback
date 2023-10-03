@@ -14,7 +14,7 @@ public class DiscordReadyEvent extends ListenerAdapter {
     @Override
     public void onReady(ReadyEvent event) {
         JDA jda = event.getJDA();
-        Main.getLogger().info("Ready: " + jda.getSelfUser().getAsTag());
+        Main.getLogger().info("Ready: " + jda.getSelfUser().getName());
 
         // bugコマンドは削除する
         for (Guild guild : jda.getGuilds()) {

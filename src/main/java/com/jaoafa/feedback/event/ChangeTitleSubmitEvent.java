@@ -45,13 +45,16 @@ public class ChangeTitleSubmitEvent extends ListenerAdapter {
             threadTitle = newTitle;
         }
 
-        thread.sendMessage("`%s` のアクションにより、タイトルを変更します。".formatted(user.getAsTag())).complete();
+        thread.sendMessage("`%s` のアクションにより、タイトルを変更します。".formatted(user.getName())).complete();
         thread.getManager().setName(threadTitle).queue();
 
         if (issueNumber == -1) {
             return;
         }
         String repository = Main.getConfig().getRepository();
-        GitHub.updateIssue(repository, issueNumber, GitHub.UpdateType.TITLE, newTitle);
+        GitHub.UpdateIssueResult result = GitHub.updateIssue(repository, issueNumber, GitHub.UpdateType.TITLE, newTitle);
+        if (result.error() != null) {
+            thread.sendMessage("GitHubへのタイトルの変更に失敗しました: ```%s```".formatted(result.error())).complete();
+        }
     }
 }

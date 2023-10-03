@@ -20,7 +20,7 @@ public class FeatureMenuSubmitEvent extends ListenerAdapter {
         if (!event.getModalId().equals("feature-request")) {
             return;
         }
-        event.deferReply(true).queue();
+        event.deferReply(false).queue();
         String title = Objects.requireNonNull(event.getValue("title")).getAsString();
         String description = Objects.requireNonNull(event.getValue("description")).getAsString();
 

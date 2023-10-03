@@ -74,7 +74,7 @@ public class ThreadButtonEvent extends ListenerAdapter {
 
         FeedbackManager.changeTitleMap.put(event.getUser().getIdLong(), thread);
 
-        event.replyModal(Modal.create("change-title", "タイトルの変更").addActionRows(ActionRow.of(newTitle)).build())
+        event.replyModal(Modal.create("change-title", "タイトルの変更").addComponents(ActionRow.of(newTitle)).build())
                 .queue();
     }
 
@@ -100,7 +100,7 @@ public class ThreadButtonEvent extends ListenerAdapter {
 
         FeedbackManager.sendToIssueMap.put(event.getUser().getIdLong(), thread);
 
-        event.replyModal(Modal.create("send-to-issue", "Issueにメッセージを送信").addActionRows(ActionRow.of(messageRow)).build())
+        event.replyModal(Modal.create("send-to-issue", "Issueにメッセージを送信").addComponents(ActionRow.of(messageRow)).build())
                 .queue();
     }
 
@@ -126,7 +126,7 @@ public class ThreadButtonEvent extends ListenerAdapter {
 
         FeedbackManager.closeReportMap.put(event.getUser().getIdLong(), thread);
 
-        event.replyModal(Modal.create("close-report", "リクエスト/報告をクローズ").addActionRows(ActionRow.of(messageRow)).build())
+        event.replyModal(Modal.create("close-report", "リクエスト/報告をクローズ").addComponents(ActionRow.of(messageRow)).build())
                 .queue();
     }
 }

@@ -20,7 +20,7 @@ public class BugMenuSubmitEvent extends ListenerAdapter {
         if (!event.getModalId().equals("bug-report")) {
             return;
         }
-        event.deferReply(true).queue();
+        event.deferReply(false).queue();
         String title = Objects.requireNonNull(event.getValue("title")).getAsString();
         String description = Objects.requireNonNull(event.getValue("description")).getAsString();
 

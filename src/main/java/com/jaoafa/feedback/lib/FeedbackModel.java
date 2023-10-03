@@ -51,7 +51,7 @@ public class FeedbackModel {
 
         FeatureRequestModal = Modal
                 .create("feature-request", "新機能リクエスト")
-                .addActionRows(ActionRow.of(title), ActionRow.of(description))
+                .addComponents(ActionRow.of(title), ActionRow.of(description))
                 .build();
     }
 
@@ -82,7 +82,7 @@ public class FeedbackModel {
 
         ImprovementRequestModal = Modal
                 .create("improvement-request", "機能改善リクエスト")
-                .addActionRows(ActionRow.of(title), ActionRow.of(target), ActionRow.of(description))
+                .addComponents(ActionRow.of(title), ActionRow.of(target), ActionRow.of(description))
                 .build();
     }
 
@@ -105,7 +105,7 @@ public class FeedbackModel {
 
         BugReportModal = Modal
                 .create("bug-report", "不具合報告")
-                .addActionRows(ActionRow.of(title), ActionRow.of(description))
+                .addComponents(ActionRow.of(title), ActionRow.of(description))
                 .build();
     }
 
@@ -217,7 +217,7 @@ public class FeedbackModel {
                 .setTitle(title)
                 .setTimestamp(Instant.now())
                 .setColor(color)
-                .setAuthor(user.getAsTag(), "https://discord.com/users/" + user.getId(), user.getAvatarUrl());
+                .setAuthor(user.getName(), "https://discord.com/users/" + user.getId(), user.getAvatarUrl());
     }
 
     private static MessageEmbed.Field getIssueUrlField(GitHub.CreateIssueResult createIssueResult) {
@@ -246,7 +246,7 @@ public class FeedbackModel {
                 .formatted(
                         description,
                         getMessageText(message),
-                        requester.getAsTag(),
+                        requester.getName(),
                         requester.getId())
                 .trim();
     }
@@ -278,7 +278,7 @@ public class FeedbackModel {
                         description,
                         target,
                         getMessageText(message),
-                        requester.getAsTag(),
+                        requester.getName(),
                         requester.getId())
                 .trim();
     }
@@ -304,7 +304,7 @@ public class FeedbackModel {
                 .formatted(
                         description,
                         getMessageText(message),
-                        reporter.getAsTag(),
+                        reporter.getName(),
                         reporter.getId())
                 .trim();
     }
@@ -313,7 +313,7 @@ public class FeedbackModel {
         return message != null ?
                 "%s に送信された `%s` による `#%s` でのメッセージ\n\nメッセージURL: %s".formatted(
                         message.getTimeCreated().atZoneSameInstant(ZoneId.of("Asia/Tokyo")).format(FORMATTER),
-                        message.getAuthor().getAsTag(),
+                        message.getAuthor().getName(),
                         message.getChannel().getName(),
                         message.getJumpUrl()) : "NULL";
     }

@@ -59,7 +59,7 @@ public class FeedbackManager {
         ForumPost forum = channel.createForumPost(threadTitle, forumStartMessage).complete();
         saveFeedback(new Feedback(FeedbackType.FEATURE_REQUEST,
                 message != null ? message.getIdLong() : -1,
-                new FeedbackUser(requester.getIdLong(), requester.getName(), requester.getDiscriminator()),
+                new FeedbackUser(requester.getIdLong(), requester.getName()),
                 forum.getThreadChannel().getIdLong(),
                 createIssueResult.issueNumber()));
         return forum;
@@ -90,7 +90,7 @@ public class FeedbackManager {
         ForumPost forum = channel.createForumPost(threadTitle, forumStartMessage).complete();
         saveFeedback(new Feedback(FeedbackType.IMPROVEMENT_REQUEST,
                 message != null ? message.getIdLong() : -1,
-                new FeedbackUser(requester.getIdLong(), requester.getName(), requester.getDiscriminator()),
+                new FeedbackUser(requester.getIdLong(), requester.getName()),
                 forum.getThreadChannel().getIdLong(),
                 createIssueResult.issueNumber()));
         return forum;
@@ -103,10 +103,10 @@ public class FeedbackManager {
         String title = inputTitle;
         String description;
         if (inputTitle == null && message != null) {
-            title = "%s による #%s での不具合報告".formatted(reporter.getAsTag(), message.getChannel().getName());
+            title = "%s による #%s での不具合報告".formatted(reporter.getName(), message.getChannel().getName());
         }
         if (title == null && message == null) {
-            title = "%s による不具合報告".formatted(reporter.getAsTag());
+            title = "%s による不具合報告".formatted(reporter.getName());
         }
         description = Objects.requireNonNullElse(inputDescription, "NULL");
 
@@ -136,7 +136,7 @@ public class FeedbackManager {
 
         saveFeedback(new Feedback(FeedbackType.BUG_REPORT,
                 message != null ? message.getIdLong() : -1,
-                new FeedbackUser(reporter.getIdLong(), reporter.getName(), reporter.getDiscriminator()),
+                new FeedbackUser(reporter.getIdLong(), reporter.getName()),
                 forum.getThreadChannel().getIdLong(),
                 createIssueResult.issueNumber()));
         return forum;
@@ -239,13 +239,13 @@ public class FeedbackManager {
         }
     }
 
-    record FeedbackUser(long userId, String username, String discriminator) {
+    record FeedbackUser(long userId, String username) {
         JSONObject toJSON() {
-            return new JSONObject().put("userId", userId).put("username", username).put("discriminator", discriminator);
+            return new JSONObject().put("userId", userId).put("username", username);
         }
 
         static FeedbackUser fromJSON(JSONObject json) {
-            return new FeedbackUser(json.getLong("userId"), json.getString("username"), json.getString("discriminator"));
+            return new FeedbackUser(json.getLong("userId"), json.getString("username"));
         }
     }
 

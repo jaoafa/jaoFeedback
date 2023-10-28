@@ -45,7 +45,7 @@ public class ChangeTitleSubmitEvent extends ListenerAdapter {
             threadTitle = newTitle;
         }
 
-        thread.sendMessage("`%s` のアクションにより、タイトルを変更します。".formatted(user.getAsTag())).complete();
+        thread.sendMessage("`%s` のアクションにより、タイトルを変更します。".formatted(user.getName())).complete();
         thread.getManager().setName(threadTitle).queue();
 
         if (issueNumber == -1) {

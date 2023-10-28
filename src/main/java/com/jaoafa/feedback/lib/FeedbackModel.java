@@ -221,7 +221,7 @@ public class FeedbackModel {
                 .setTitle(title)
                 .setTimestamp(Instant.now())
                 .setColor(color)
-                .setAuthor(user.getAsTag(), "https://discord.com/users/" + user.getId(), user.getAvatarUrl());
+                .setAuthor(user.getName(), "https://discord.com/users/" + user.getId(), user.getAvatarUrl());
     }
 
     private static MessageEmbed.Field getIssueUrlField(GitHub.CreateIssueResult createIssueResult) {
@@ -250,7 +250,7 @@ public class FeedbackModel {
                 .formatted(
                         description,
                         getMessageText(message),
-                        requester.getAsTag(),
+                        requester.getName(),
                         requester.getId())
                 .trim();
     }
@@ -282,7 +282,7 @@ public class FeedbackModel {
                         description,
                         target,
                         getMessageText(message),
-                        requester.getAsTag(),
+                        requester.getName(),
                         requester.getId())
                 .trim();
     }
@@ -308,7 +308,7 @@ public class FeedbackModel {
                 .formatted(
                         description,
                         getMessageText(message),
-                        reporter.getAsTag(),
+                        reporter.getName(),
                         reporter.getId())
                 .trim();
     }
@@ -317,7 +317,7 @@ public class FeedbackModel {
         return message != null ?
                 "%s に送信された `%s` による `#%s` でのメッセージ\n\nメッセージURL: %s".formatted(
                         message.getTimeCreated().atZoneSameInstant(ZoneId.of("Asia/Tokyo")).format(FORMATTER),
-                        message.getAuthor().getAsTag(),
+                        message.getAuthor().getName(),
                         message.getChannel().getName(),
                         message.getJumpUrl()) : "NULL";
     }

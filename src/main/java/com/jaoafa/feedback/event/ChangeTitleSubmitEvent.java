@@ -52,6 +52,9 @@ public class ChangeTitleSubmitEvent extends ListenerAdapter {
             return;
         }
         String repository = Main.getConfig().getRepository();
-        GitHub.updateIssue(repository, issueNumber, GitHub.UpdateType.TITLE, newTitle);
+        GitHub.UpdateIssueResult result = GitHub.updateIssue(repository, issueNumber, GitHub.UpdateType.TITLE, newTitle);
+        if (result.error() != null) {
+            thread.sendMessage("GitHubへのタイトルの変更に失敗しました: ```%s```".formatted(result.error())).complete();
+        }
     }
 }

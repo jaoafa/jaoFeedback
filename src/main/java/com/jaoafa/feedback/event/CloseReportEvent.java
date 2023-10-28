@@ -53,7 +53,9 @@ public class CloseReportEvent extends ListenerAdapter {
         GitHub.createIssueComment(repository,
                 issueNumber,
                 "`%s` がスレッドをクローズしたため、本 issue もクローズします。\n\n## 理由\n\n%s".formatted(user.getName(), reason));
-        GitHub.updateIssue(repository, issueNumber, GitHub.UpdateType.STATE, "closed");
-
+        GitHub.UpdateIssueResult result = GitHub.updateIssue(repository, issueNumber, GitHub.UpdateType.STATE, "closed");
+        if (result.error() != null) {
+            Main.getLogger().error("Failed to close issue: " + result.error());
+        }
     }
 }

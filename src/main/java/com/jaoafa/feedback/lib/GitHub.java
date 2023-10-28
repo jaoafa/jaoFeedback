@@ -32,7 +32,7 @@ public class GitHub {
             try (Response response = client.newCall(request).execute()) {
                 if (response.code() != 201) {
                     ResponseBody result = response.body();
-                    String details = result != null ? result.string() : "";
+                    String details = result.string();
                     Main.getLogger().error("GitHub.createIssue: " + details);
                     return new CreateIssueResult(-1, details);
                 }
@@ -67,7 +67,7 @@ public class GitHub {
             try (Response response = client.newCall(request).execute()) {
                 if (response.code() != 201) {
                     ResponseBody result = response.body();
-                    String details = result != null ? result.string() : "";
+                    String details = result.string();
                     Main.getLogger().error("GitHub.createIssueComment: " + details);
                     return new CreateIssueCommentResult(null, details);
                 }
@@ -102,7 +102,7 @@ public class GitHub {
             try (Response response = client.newCall(request).execute()) {
                 if (response.code() != 201) {
                     ResponseBody result = response.body();
-                    String details = result != null ? result.string() : "";
+                    String details = result.string();
                     Main.getLogger().error("GitHub.updateIssue: " + details);
                     return new UpdateIssueResult(details);
                 }

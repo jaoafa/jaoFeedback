@@ -120,9 +120,13 @@ public class FeedbackModel {
     }
 
     public static String getMentionContent(User reporter, @Nullable Message message) {
+        Config config = Main.getConfig();
+
         // 通知ロール + 報告者 + メッセージ送信者
         List<String> mentions = new ArrayList<>();
-        mentions.add("<@&959313488113717298>"); // @jDev
+        for (String shouldJoinThreadMentionId : config.getShouldJoinThreadMentionIds()) {
+            mentions.add("<@" + shouldJoinThreadMentionId + ">");
+        }
         mentions.add(reporter.getAsMention()); // 報告者
         if (message != null && !message.getAuthor().isBot()) {
             // メッセージ送信者がBotではない場合のみメンションする

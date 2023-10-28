@@ -8,7 +8,6 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
@@ -74,7 +73,9 @@ public class ThreadButtonEvent extends ListenerAdapter {
 
         FeedbackManager.changeTitleMap.put(event.getUser().getIdLong(), thread);
 
-        event.replyModal(Modal.create("change-title", "タイトルの変更").addActionRows(ActionRow.of(newTitle)).build())
+        event.replyModal(Modal.create("change-title", "タイトルの変更")
+                        .addActionRow(newTitle)
+                        .build())
                 .queue();
     }
 
@@ -100,7 +101,9 @@ public class ThreadButtonEvent extends ListenerAdapter {
 
         FeedbackManager.sendToIssueMap.put(event.getUser().getIdLong(), thread);
 
-        event.replyModal(Modal.create("send-to-issue", "Issueにメッセージを送信").addActionRows(ActionRow.of(messageRow)).build())
+        event.replyModal(Modal.create("send-to-issue", "Issueにメッセージを送信")
+                        .addActionRow(messageRow)
+                        .build())
                 .queue();
     }
 
@@ -126,7 +129,9 @@ public class ThreadButtonEvent extends ListenerAdapter {
 
         FeedbackManager.closeReportMap.put(event.getUser().getIdLong(), thread);
 
-        event.replyModal(Modal.create("close-report", "リクエスト/報告をクローズ").addActionRows(ActionRow.of(messageRow)).build())
+        event.replyModal(Modal.create("close-report", "リクエスト/報告をクローズ")
+                        .addActionRow(messageRow)
+                        .build())
                 .queue();
     }
 }

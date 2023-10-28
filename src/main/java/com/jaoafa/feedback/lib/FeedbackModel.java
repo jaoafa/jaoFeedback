@@ -51,7 +51,7 @@ public class FeedbackModel {
 
         FeatureRequestModal = Modal
                 .create("feature-request", "新機能リクエスト")
-                .addActionRows(ActionRow.of(title), ActionRow.of(description))
+                .addActionRow(title, description)
                 .build();
     }
 
@@ -82,7 +82,7 @@ public class FeedbackModel {
 
         ImprovementRequestModal = Modal
                 .create("improvement-request", "機能改善リクエスト")
-                .addActionRows(ActionRow.of(title), ActionRow.of(target), ActionRow.of(description))
+                .addActionRow(title, target, description)
                 .build();
     }
 
@@ -105,7 +105,7 @@ public class FeedbackModel {
 
         BugReportModal = Modal
                 .create("bug-report", "不具合報告")
-                .addActionRows(ActionRow.of(title), ActionRow.of(description))
+                .addActionRow(title, description)
                 .build();
     }
 

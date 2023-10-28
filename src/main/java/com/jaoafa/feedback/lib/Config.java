@@ -8,12 +8,15 @@ import org.slf4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Config {
     private final Logger logger;
     private final String token;
     private final long guildId;
     private final long channelId;
+    private final Set<String> shouldJoinThreadMentionIds;
     private final String githubAPIToken;
     private final String repository;
 
@@ -46,6 +49,8 @@ public class Config {
             channelId = config.getLong("channelId");
             githubAPIToken = config.getString("githubAPIToken");
 
+            // - 任意項目の取得
+            shouldJoinThreadMentionIds = config.optJSONArray("shouldJoinThreadMentionIds").toList().stream().map(Object::toString).collect(Collectors.toSet());
             repository = config.optString("repository", "jaoafa/jao-Minecraft-Server");
         } catch (IOException e) {
             logger.warn("コンフィグファイル config.json を読み取れませんでした: " + e.getMessage());
@@ -76,6 +81,10 @@ public class Config {
 
     public long getChannelId() {
         return channelId;
+    }
+
+    public Set<String> getShouldJoinThreadMentionIds() {
+        return shouldJoinThreadMentionIds;
     }
 
     public String getGitHubAPIToken() {

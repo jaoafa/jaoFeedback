@@ -22,10 +22,10 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 public class FeedbackManager {
-    public static Map<Long, Message> messageMap = new HashMap<>();
-    public static Map<Long, ThreadChannel> changeTitleMap = new HashMap<>();
-    public static Map<Long, ThreadChannel> sendToIssueMap = new HashMap<>();
-    public static Map<Long, ThreadChannel> closeReportMap = new HashMap<>();
+    public static final Map<Long, Message> messageMap = new HashMap<>();
+    public static final Map<Long, ThreadChannel> changeTitleMap = new HashMap<>();
+    public static final Map<Long, ThreadChannel> sendToIssueMap = new HashMap<>();
+    public static final Map<Long, ThreadChannel> closeReportMap = new HashMap<>();
     public static final Pattern ISSUE_PATTERN = Pattern.compile("^\\*(\\d+) ");
     private final Path FEEDBACKS_PATH;
 

@@ -51,7 +51,7 @@ public class FeedbackModel {
 
         FeatureRequestModal = Modal
                 .create("feature-request", "新機能リクエスト")
-                .addComponents(ActionRow.of(title), ActionRow.of(description))
+                .addActionRow(title, description)
                 .build();
     }
 
@@ -82,7 +82,7 @@ public class FeedbackModel {
 
         ImprovementRequestModal = Modal
                 .create("improvement-request", "機能改善リクエスト")
-                .addComponents(ActionRow.of(title), ActionRow.of(target), ActionRow.of(description))
+                .addActionRow(title, target, description)
                 .build();
     }
 
@@ -105,7 +105,7 @@ public class FeedbackModel {
 
         BugReportModal = Modal
                 .create("bug-report", "不具合報告")
-                .addComponents(ActionRow.of(title), ActionRow.of(description))
+                .addActionRow(title, description)
                 .build();
     }
 
@@ -120,9 +120,13 @@ public class FeedbackModel {
     }
 
     public static String getMentionContent(User reporter, @Nullable Message message) {
+        Config config = Main.getConfig();
+
         // 通知ロール + 報告者 + メッセージ送信者
         List<String> mentions = new ArrayList<>();
-        mentions.add("<@&959313488113717298>"); // @jDev
+        for (String shouldJoinThreadMentionId : config.getShouldJoinThreadMentionIds()) {
+            mentions.add("<@" + shouldJoinThreadMentionId + ">");
+        }
         mentions.add(reporter.getAsMention()); // 報告者
         if (message != null && !message.getAuthor().isBot()) {
             // メッセージ送信者がBotではない場合のみメンションする

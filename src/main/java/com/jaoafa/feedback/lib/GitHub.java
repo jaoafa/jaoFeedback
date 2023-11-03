@@ -30,7 +30,7 @@ public class GitHub {
                 .build();
             JSONObject obj;
             try (Response response = client.newCall(request).execute()) {
-                if (response.code() != 201) {
+                if (response.code() != 200 && response.code() != 201) {
                     ResponseBody result = response.body();
                     String details = result.string();
                     Main.getLogger().error("GitHub.createIssue: " + details);
@@ -65,7 +65,7 @@ public class GitHub {
                     .build();
             String htmlUrl;
             try (Response response = client.newCall(request).execute()) {
-                if (response.code() != 201) {
+                if (response.code() != 200 && response.code() != 201) {
                     ResponseBody result = response.body();
                     String details = result.string();
                     Main.getLogger().error("GitHub.createIssueComment: " + details);
@@ -100,7 +100,7 @@ public class GitHub {
                 .post(requestBody)
                 .build();
             try (Response response = client.newCall(request).execute()) {
-                if (response.code() != 201) {
+                if (response.code() != 200 && response.code() != 201) {
                     ResponseBody result = response.body();
                     String details = result.string();
                     Main.getLogger().error("GitHub.updateIssue: " + details);

@@ -1,6 +1,7 @@
 package com.jaoafa.feedback.lib;
 
 import com.jaoafa.feedback.Main;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -50,7 +51,7 @@ public class Config {
             githubAPIToken = config.getString("githubAPIToken");
 
             // - 任意項目の取得
-            shouldJoinThreadMentionIds = config.optJSONArray("shouldJoinThreadMentionIds").toList().stream().map(Object::toString).collect(Collectors.toSet());
+            shouldJoinThreadMentionIds = config.optJSONArray("shouldJoinThreadMentionIds", new JSONArray()).toList().stream().map(Object::toString).collect(Collectors.toSet());
             repository = config.optString("repository", "jaoafa/jao-Minecraft-Server");
         } catch (IOException e) {
             logger.warn("コンフィグファイル config.json を読み取れませんでした: " + e.getMessage());

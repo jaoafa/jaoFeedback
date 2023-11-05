@@ -23,6 +23,8 @@ public class BugMenu extends ListenerAdapter {
         }
 
         guild.upsertCommand(Commands.context(Command.Type.MESSAGE, "不具合報告")).queue();
+        guild.upsertCommand(Commands.context(Command.Type.USER, "不具合報告")).queue();
+
     }
 
     @Override

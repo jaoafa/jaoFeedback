@@ -1,4 +1,4 @@
-FROM maven:3 as builder
+FROM maven:3 AS builder
 
 WORKDIR /build
 COPY pom.xml /build/pom.xml
@@ -13,8 +13,8 @@ WORKDIR /app
 
 COPY --from=builder /build/target/jaoFeedback-jar-with-dependencies.jar .
 
-ENV FEEDBACKS_PATH /data/feedbacks.json
-ENV CONFIG_PATH /data/config.json
+ENV FEEDBACKS_PATH=/data/feedbacks.json
+ENV CONFIG_PATH=/data/config.json
 
 ENTRYPOINT []
 CMD ["java", "-jar", "jaoFeedback-jar-with-dependencies.jar"]

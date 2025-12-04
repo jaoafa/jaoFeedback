@@ -20,6 +20,8 @@ public class Config {
     private final Set<String> shouldJoinThreadMentionIds;
     private final String githubAPIToken;
     private final String repository;
+    private final Long unresolvedTagId;
+    private final Long resolvedTagId;
 
     public Config() throws RuntimeException {
         logger = Main.getLogger();
@@ -53,6 +55,8 @@ public class Config {
             // - 任意項目の取得
             shouldJoinThreadMentionIds = config.optJSONArray("shouldJoinThreadMentionIds", new JSONArray()).toList().stream().map(Object::toString).collect(Collectors.toSet());
             repository = config.optString("repository", "jaoafa/jao-Minecraft-Server");
+            unresolvedTagId = config.has("unresolvedTagId") ? config.getLong("unresolvedTagId") : null;
+            resolvedTagId = config.has("resolvedTagId") ? config.getLong("resolvedTagId") : null;
         } catch (IOException e) {
             logger.warn("コンフィグファイル config.json を読み取れませんでした: " + e.getMessage());
             e.printStackTrace();
@@ -94,5 +98,13 @@ public class Config {
 
     public String getRepository() {
         return repository;
+    }
+
+    public Long getUnresolvedTagId() {
+        return unresolvedTagId;
+    }
+
+    public Long getResolvedTagId() {
+        return resolvedTagId;
     }
 }

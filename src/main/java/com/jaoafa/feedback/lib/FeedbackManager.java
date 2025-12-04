@@ -8,6 +8,8 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumPost;
+import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
+import net.dv8tion.jda.api.requests.restaction.ForumPostAction;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import org.jetbrains.annotations.NotNull;
@@ -56,7 +58,9 @@ public class FeedbackManager {
         String threadTitle = getThreadTitle(title, createIssueResult);
         MessageEmbed embed = FeedbackModel.getFeatureRequestEmbed(description, message, requester, createIssueResult);
         MessageCreateData forumStartMessage = getForumStartMessage(message, requester, embed, createIssueResult);
-        ForumPost forum = channel.createForumPost(threadTitle, forumStartMessage).complete();
+        ForumPostAction forumPostAction = channel.createForumPost(threadTitle, forumStartMessage);
+        applyUnresolvedTag(forumPostAction, channel);
+        ForumPost forum = forumPostAction.complete();
         saveFeedback(new Feedback(FeedbackType.FEATURE_REQUEST,
                 message != null ? message.getIdLong() : -1,
                 new FeedbackUser(requester.getIdLong(), requester.getName()),
@@ -87,7 +91,9 @@ public class FeedbackManager {
         String threadTitle = getThreadTitle(title, createIssueResult);
         MessageEmbed embed = FeedbackModel.getImprovementRequestEmbed(description, target, message, requester, createIssueResult);
         MessageCreateData forumStartMessage = getForumStartMessage(message, requester, embed, createIssueResult);
-        ForumPost forum = channel.createForumPost(threadTitle, forumStartMessage).complete();
+        ForumPostAction forumPostAction = channel.createForumPost(threadTitle, forumStartMessage);
+        applyUnresolvedTag(forumPostAction, channel);
+        ForumPost forum = forumPostAction.complete();
         saveFeedback(new Feedback(FeedbackType.IMPROVEMENT_REQUEST,
                 message != null ? message.getIdLong() : -1,
                 new FeedbackUser(requester.getIdLong(), requester.getName()),
@@ -127,7 +133,9 @@ public class FeedbackManager {
         String threadTitle = getThreadTitle(title, createIssueResult);
         MessageEmbed embed = FeedbackModel.getBugReportEmbed(description, message, reporter, createIssueResult);
         MessageCreateData forumStartMessage = getForumStartMessage(message, reporter, embed, createIssueResult);
-        ForumPost forum = channel.createForumPost(threadTitle, forumStartMessage).complete();
+        ForumPostAction forumPostAction = channel.createForumPost(threadTitle, forumStartMessage);
+        applyUnresolvedTag(forumPostAction, channel);
+        ForumPost forum = forumPostAction.complete();
 
         if (inputTitle == null) {
             // リアクションなどでタイトルがnullの場合、詳細情報を示してもらえるようメッセージを送る
@@ -218,6 +226,47 @@ public class FeedbackManager {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void applyUnresolvedTag(ForumPostAction forumPostAction, ForumChannel channel) {
+        Config config = Main.getConfig();
+        Long unresolvedTagId = config.getUnresolvedTagId();
+        if (unresolvedTagId != null) {
+            ForumTag unresolvedTag = channel.getAvailableTagById(unresolvedTagId);
+            if (unresolvedTag != null) {
+                forumPostAction.setTags(unresolvedTag);
+            }
+        }
+    }
+
+    public static void updateThreadTagToResolved(ThreadChannel thread) {
+        Config config = Main.getConfig();
+        Long unresolvedTagId = config.getUnresolvedTagId();
+        Long resolvedTagId = config.getResolvedTagId();
+
+        if (resolvedTagId == null) {
+            return;
+        }
+
+        ForumChannel parentChannel = thread.getParentChannel().asForumChannel();
+        ForumTag resolvedTag = parentChannel.getAvailableTagById(resolvedTagId);
+        if (resolvedTag == null) {
+            return;
+        }
+
+        // 現在のタグを取得し、未解決タグを削除して解決済みタグを追加
+        List<ForumTag> currentTags = new ArrayList<>(thread.getAppliedTags());
+        if (unresolvedTagId != null) {
+            currentTags.removeIf(tag -> tag.getIdLong() == unresolvedTagId);
+        }
+        
+        // 解決済みタグが既に含まれていない場合のみ追加
+        boolean hasResolvedTag = currentTags.stream().anyMatch(tag -> tag.getIdLong() == resolvedTagId);
+        if (!hasResolvedTag) {
+            currentTags.add(resolvedTag);
+        }
+
+        thread.getManager().setAppliedTags(currentTags).queue();
     }
 
     public record Feedback(FeedbackType type, long messageId, FeedbackUser reporter, long threadId, int issueNumber) {

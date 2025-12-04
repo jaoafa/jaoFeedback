@@ -42,6 +42,10 @@ public class CloseReportEvent extends ListenerAdapter {
                 .setFooter("スレッドの管理権限のあるユーザーはメッセージ送信などでスレッドを再開できますが、原則再開させずに新規でリクエスト/報告を立ち上げてください。")
                 .setColor(Color.RED)
                 .build()).complete();
+        
+        // タグを未解決から解決済みに変更
+        FeedbackManager.updateThreadTagToResolved(thread);
+        
         thread.getManager().setArchived(true).setLocked(true).queue();
 
         Matcher matcher = FeedbackManager.ISSUE_PATTERN.matcher(thread.getName());

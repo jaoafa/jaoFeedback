@@ -50,10 +50,10 @@ public class CloseReportEvent extends ListenerAdapter {
         long resolvedTagId = Main.getConfig().getResolvedTagId();
         long unresolvedTagId = Main.getConfig().getUnresolvedTagId();
         
-        // Remove unresolved tag if present
+        // Remove unresolved tag if present and collect to mutable list
         List<ForumTag> currentTags = thread.getAppliedTags().stream()
                 .filter(tag -> tag.getIdLong() != unresolvedTagId)
-                .collect(Collectors.toList());
+                .collect(Collectors.toCollection(java.util.ArrayList::new));
         
         // Add resolved tag if not already present
         ForumTag resolvedTag = thread.getParentChannel().asForumChannel().getAvailableTagById(resolvedTagId);

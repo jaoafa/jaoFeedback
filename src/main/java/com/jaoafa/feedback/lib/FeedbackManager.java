@@ -181,13 +181,11 @@ public class FeedbackManager {
         long unresolvedTagId = Main.getConfig().getUnresolvedTagId();
         ForumTag unresolvedTag = channel.getAvailableTagById(unresolvedTagId);
         
+        var builder = channel.createForumPost(threadTitle, forumStartMessage);
         if (unresolvedTag != null) {
-            return channel.createForumPost(threadTitle, forumStartMessage)
-                    .setTags(unresolvedTag)
-                    .complete();
-        } else {
-            return channel.createForumPost(threadTitle, forumStartMessage).complete();
+            builder.setTags(unresolvedTag);
         }
+        return builder.complete();
     }
 
     public boolean isAlreadyFeedback(Message message) {

@@ -11,7 +11,6 @@ import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import java.awt.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -51,10 +50,8 @@ public class CloseReportEvent extends ListenerAdapter {
         long resolvedTagId = Main.getConfig().getResolvedTagId();
         long unresolvedTagId = Main.getConfig().getUnresolvedTagId();
         
-        List<ForumTag> currentTags = new ArrayList<>(thread.getAppliedTags());
-        
         // Remove unresolved tag if present
-        currentTags = currentTags.stream()
+        List<ForumTag> currentTags = thread.getAppliedTags().stream()
                 .filter(tag -> tag.getIdLong() != unresolvedTagId)
                 .collect(Collectors.toList());
         

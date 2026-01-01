@@ -6,12 +6,16 @@ import com.jaoafa.feedback.lib.GitHub;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 public class CloseReportEvent extends ListenerAdapter {
     @Override
@@ -42,6 +46,26 @@ public class CloseReportEvent extends ListenerAdapter {
                 .setFooter("スレッドの管理権限のあるユーザーはメッセージ送信などでスレッドを再開できますが、原則再開させずに新規でリクエスト/報告を立ち上げてください。")
                 .setColor(Color.RED)
                 .build()).complete();
+        
+        // Update tags: add resolved tag and remove unresolved tag
+        long resolvedTagId = Main.getConfig().getResolvedTagId();
+        long unresolvedTagId = Main.getConfig().getUnresolvedTagId();
+        
+        List<ForumTag> currentTags = new ArrayList<>(thread.getAppliedTags());
+        
+        // Remove unresolved tag if present
+        currentTags = currentTags.stream()
+                .filter(tag -> tag.getIdLong() != unresolvedTagId)
+                .collect(Collectors.toList());
+        
+        // Add resolved tag if not already present
+        ForumTag resolvedTag = thread.getParentChannel().asForumChannel().getAvailableTagById(resolvedTagId);
+        if (resolvedTag != null && currentTags.stream().noneMatch(tag -> tag.getIdLong() == resolvedTagId)) {
+            currentTags.add(resolvedTag);
+        }
+        
+        thread.getManager().setAppliedTags(currentTags).queue();
+        
         thread.getManager().setArchived(true).setLocked(true).queue();
 
         Matcher matcher = FeedbackManager.ISSUE_PATTERN.matcher(thread.getName());

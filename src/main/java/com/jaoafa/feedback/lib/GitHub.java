@@ -76,8 +76,8 @@ public class GitHub {
                 ResponseBody responseBody = response.body();
                 if (responseBody == null) {
                     String details = "Empty response body";
-                    Main.getLogger().error("GitHub.resolveIssue: " + details);
-                    return new ResolveIssueResult(null, -1, null, details);
+                    Main.getLogger().error("GitHub.createIssueComment: " + details);
+                    return new CreateIssueCommentResult(null, details);
                 }
                 JSONObject obj = new JSONObject(responseBody.string());
                 htmlUrl = obj.getString("html_url");
@@ -112,7 +112,13 @@ public class GitHub {
                     return new ResolveIssueResult(null, -1, null, details);
                 }
 
-                JSONObject obj = new JSONObject(Objects.requireNonNull(response.body()).string());
+                ResponseBody responseBody = response.body();
+                if (responseBody == null) {
+                    String details = "Empty response body";
+                    Main.getLogger().error("GitHub.resolveIssue: " + details);
+                    return new ResolveIssueResult(null, -1, null, details);
+                }
+                JSONObject obj = new JSONObject(responseBody.string());
                 int resolvedIssueNumber = obj.getInt("number");
                 String htmlUrl = obj.optString("html_url", null);
 

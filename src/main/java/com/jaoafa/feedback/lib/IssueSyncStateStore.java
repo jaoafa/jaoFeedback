@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class IssueSyncStateStore {
+    // Access is currently single-threaded via the scheduler, so simple synchronization is sufficient.
     private final Path path;
 
     public IssueSyncStateStore(String path) {

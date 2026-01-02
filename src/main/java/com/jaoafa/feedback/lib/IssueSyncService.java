@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 public class IssueSyncService implements Runnable {
     private static final int EMBED_DESCRIPTION_LIMIT = 3800;
     private static final Pattern DISCORD_MESSAGE_MARKER = Pattern.compile("`.+` によるメッセージ");
+    private static final long DISCORD_API_TIMEOUT_SECONDS = 10;
 
     private final IssueSyncStateStore stateStore;
 
@@ -80,6 +81,10 @@ public class IssueSyncService implements Runnable {
             if (state == null) {
                 state = IssueSyncStateStore.IssueSyncState.create(threadId, repository, issueNumber, now);
                 states.put(threadId, state);
+                updated = true;
+            }
+            if (state.repository == null || state.repository.isBlank()) {
+                state.repository = repository;
                 updated = true;
             }
             if (!Objects.equals(state.repository, repository) || state.issueNumber != issueNumber) {
@@ -140,17 +145,21 @@ public class IssueSyncService implements Runnable {
                 Instant updatedAt = parseInstant(comment.updatedAt());
                 IssueSyncStateStore.CommentState commentState = state.commentMap.get(comment.id());
                 if (commentState == null) {
-                    Message message = thread.sendMessageEmbeds(buildIssueCommentEmbed(comment, false)).complete();
-                    IssueSyncStateStore.CommentState newState = new IssueSyncStateStore.CommentState();
-                    newState.messageId = message.getIdLong();
-                    newState.updatedAt = updatedAt;
-                    state.commentMap.put(comment.id(), newState);
-                    updated = true;
+                    Message message = sendMessageWithTimeout(thread, buildIssueCommentEmbed(comment, false));
+                    if (message != null) {
+                        IssueSyncStateStore.CommentState newState = new IssueSyncStateStore.CommentState();
+                        newState.messageId = message.getIdLong();
+                        newState.updatedAt = updatedAt;
+                        state.commentMap.put(comment.id(), newState);
+                        updated = true;
+                    }
                 } else if (updatedAt != null && (commentState.updatedAt == null || updatedAt.isAfter(commentState.updatedAt))) {
                     boolean edited = editIssueCommentMessage(thread, commentState.messageId, buildIssueCommentEmbed(comment, true));
                     if (!edited) {
-                        Message message = thread.sendMessageEmbeds(buildIssueCommentEmbed(comment, true)).complete();
-                        commentState.messageId = message.getIdLong();
+                        Message message = sendMessageWithTimeout(thread, buildIssueCommentEmbed(comment, true));
+                        if (message != null) {
+                            commentState.messageId = message.getIdLong();
+                        }
                     }
                     commentState.updatedAt = updatedAt;
                     updated = true;
@@ -159,7 +168,7 @@ public class IssueSyncService implements Runnable {
                     maxUpdatedAt = updatedAt;
                 }
             }
-            if (maxUpdatedAt != null && (state.lastCommentUpdatedAt == null || maxUpdatedAt.isAfter(state.lastCommentUpdatedAt))) {
+            if (maxUpdatedAt != null && maxUpdatedAt.isAfter(state.lastCommentUpdatedAt)) {
                 state.lastCommentUpdatedAt = maxUpdatedAt;
                 updated = true;
             }
@@ -264,11 +273,24 @@ public class IssueSyncService implements Runnable {
 
     private boolean editIssueCommentMessage(ThreadChannel thread, long messageId, MessageEmbed embed) {
         try {
-            thread.editMessageById(messageId, MessageEditData.fromEmbeds(embed)).complete();
+            thread.editMessageById(messageId, MessageEditData.fromEmbeds(embed))
+                    .submit()
+                    .get(DISCORD_API_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS);
             return true;
         } catch (Exception e) {
             Main.getLogger().warn("Failed to edit comment message: " + e.getMessage());
             return false;
+        }
+    }
+
+    private Message sendMessageWithTimeout(ThreadChannel thread, MessageEmbed embed) {
+        try {
+            return thread.sendMessageEmbeds(embed)
+                    .submit()
+                    .get(DISCORD_API_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (Exception e) {
+            Main.getLogger().warn("Failed to send issue comment message: " + e.getMessage());
+            return null;
         }
     }
 

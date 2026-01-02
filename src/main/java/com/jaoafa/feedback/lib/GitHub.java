@@ -15,6 +15,7 @@ import java.util.Objects;
 
 public class GitHub {
     private static volatile String cachedAuthenticatedUserLogin;
+    private static volatile String cachedAuthenticatedUserToken;
 
     public static CreateIssueResult createIssue(String repo, String title, String body, JSONArray labels) {
         String githubToken = Main.getConfig().getGitHubAPIToken();
@@ -97,10 +98,14 @@ public class GitHub {
     }
 
     public static AuthenticatedUserResult getAuthenticatedUserLogin() {
+        String githubToken = Main.getConfig().getGitHubAPIToken();
+        if (cachedAuthenticatedUserToken != null && !cachedAuthenticatedUserToken.equals(githubToken)) {
+            cachedAuthenticatedUserLogin = null;
+            cachedAuthenticatedUserToken = null;
+        }
         if (cachedAuthenticatedUserLogin != null) {
             return new AuthenticatedUserResult(cachedAuthenticatedUserLogin, null);
         }
-        String githubToken = Main.getConfig().getGitHubAPIToken();
         String url = "https://api.github.com/user";
 
         try {
@@ -125,6 +130,7 @@ public class GitHub {
                     return new AuthenticatedUserResult(null, details);
                 }
                 cachedAuthenticatedUserLogin = login;
+                cachedAuthenticatedUserToken = githubToken;
                 return new AuthenticatedUserResult(login, null);
             }
         } catch (IOException e) {

@@ -8,9 +8,10 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.interactions.components.text.TextInput;
-import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
-import net.dv8tion.jda.api.interactions.modals.Modal;
+import net.dv8tion.jda.api.components.label.Label;
+import net.dv8tion.jda.api.components.textinput.TextInput;
+import net.dv8tion.jda.api.components.textinput.TextInputStyle;
+import net.dv8tion.jda.api.modals.Modal;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -64,7 +65,7 @@ public class ThreadButtonEvent extends ListenerAdapter {
             return;
         }
         TextInput newTitle = TextInput
-                .create("new-title", "新しいタイトル", TextInputStyle.SHORT)
+                .create("new-title", TextInputStyle.SHORT)
                 .setPlaceholder("新しいタイトル")
                 .setMinLength(3)
                 .setMaxLength(70)
@@ -74,7 +75,7 @@ public class ThreadButtonEvent extends ListenerAdapter {
         FeedbackManager.changeTitleMap.put(event.getUser().getIdLong(), thread);
 
         event.replyModal(Modal.create("change-title", "タイトルの変更")
-                        .addActionRow(newTitle)
+                        .addComponents(Label.of("新しいタイトル", newTitle))
                         .build())
                 .queue();
     }
@@ -92,7 +93,7 @@ public class ThreadButtonEvent extends ListenerAdapter {
         }
 
         TextInput messageRow = TextInput
-                .create("content", "メッセージ", TextInputStyle.PARAGRAPH)
+                .create("content", TextInputStyle.PARAGRAPH)
                 .setPlaceholder("送信するメッセージのコンテンツを入力")
                 .setMinLength(1)
                 .setMaxLength(2000)
@@ -102,7 +103,7 @@ public class ThreadButtonEvent extends ListenerAdapter {
         FeedbackManager.sendToIssueMap.put(event.getUser().getIdLong(), thread);
 
         event.replyModal(Modal.create("send-to-issue", "Issueにメッセージを送信")
-                        .addActionRow(messageRow)
+                        .addComponents(Label.of("メッセージ", messageRow))
                         .build())
                 .queue();
     }
@@ -120,7 +121,7 @@ public class ThreadButtonEvent extends ListenerAdapter {
         }
 
         TextInput messageRow = TextInput
-                .create("close-reason", "リクエスト/報告を閉じる理由", TextInputStyle.PARAGRAPH)
+                .create("close-reason", TextInputStyle.PARAGRAPH)
                 .setPlaceholder("リクエスト/報告を閉じる理由を入力してください（XXXXXで修正した・対応の必要がない など）")
                 .setMinLength(1)
                 .setMaxLength(2000)
@@ -130,7 +131,7 @@ public class ThreadButtonEvent extends ListenerAdapter {
         FeedbackManager.closeReportMap.put(event.getUser().getIdLong(), thread);
 
         event.replyModal(Modal.create("close-report", "リクエスト/報告をクローズ")
-                        .addActionRow(messageRow)
+                        .addComponents(Label.of("リクエスト/報告を閉じる理由", messageRow))
                         .build())
                 .queue();
     }

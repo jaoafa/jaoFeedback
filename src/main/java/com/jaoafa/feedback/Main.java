@@ -63,8 +63,13 @@ public class Main {
         feedbackManager = new FeedbackManager();
         scheduler = Executors.newSingleThreadScheduledExecutor();
 
-        if (config.isIssueSyncEnabled()) {
-            int intervalSeconds = Math.max(config.getIssueSyncIntervalSeconds(), 30);
+        if (config.getIssueSyncEnabled()) {
+            int configuredIntervalSeconds = config.getIssueSyncIntervalSeconds();
+            int intervalSeconds = configuredIntervalSeconds;
+            if (configuredIntervalSeconds < 30) {
+                logger.warn("Configured issue sync interval {} seconds is below the minimum of 30 seconds. Overriding to 30 seconds.", configuredIntervalSeconds);
+                intervalSeconds = 30;
+            }
             IssueSyncStateStore stateStore = new IssueSyncStateStore(config.getIssueSyncStatePath());
             IssueSyncService service = new IssueSyncService(stateStore);
             scheduler.scheduleAtFixedRate(service, intervalSeconds, intervalSeconds, TimeUnit.SECONDS);

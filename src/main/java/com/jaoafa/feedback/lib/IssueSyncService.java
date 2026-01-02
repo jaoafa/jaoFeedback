@@ -8,13 +8,13 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 
 import java.awt.*;
 import java.time.Instant;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -24,7 +24,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class IssueSyncService implements Runnable {
-    private static final int EMBED_DESCRIPTION_LIMIT = 3800;
+    // Discord embed description limit is 4096; keep a small safety margin.
+    private static final int EMBED_DESCRIPTION_SAFE_LIMIT = 3800;
     private static final Pattern DISCORD_MESSAGE_MARKER = Pattern.compile("`.+` によるメッセージ");
     private static final long DISCORD_API_TIMEOUT_SECONDS = 10;
 
@@ -199,7 +200,9 @@ public class IssueSyncService implements Runnable {
             List<ThreadChannel> threads = guild.retrieveActiveThreads().complete();
             return threads.stream().collect(Collectors.toMap(ThreadChannel::getIdLong, thread -> thread, (a, b) -> a));
         } catch (ErrorResponseException e) {
-            if (e.getErrorResponse() != ErrorResponse.UNKNOWN_CHANNEL && e.getErrorResponse() != ErrorResponse.MISSING_ACCESS) {
+            if (e.getErrorResponse() == ErrorResponse.UNKNOWN_CHANNEL || e.getErrorResponse() == ErrorResponse.MISSING_ACCESS) {
+                Main.getLogger().debug("Failed to retrieve active threads: " + e.getMessage());
+            } else {
                 Main.getLogger().warn("Failed to retrieve active threads: " + e.getMessage());
             }
         } catch (Exception e) {
@@ -229,10 +232,14 @@ public class IssueSyncService implements Runnable {
     private void applyResolvedTags(ThreadChannel thread) {
         long resolvedTagId = Main.getConfig().getResolvedTagId();
         long unresolvedTagId = Main.getConfig().getUnresolvedTagId();
+        var parentChannel = thread.getParentChannel();
+        if (parentChannel == null || parentChannel.getType() != ChannelType.FORUM) {
+            return;
+        }
         List<ForumTag> currentTags = thread.getAppliedTags().stream()
                 .filter(tag -> tag.getIdLong() != unresolvedTagId)
                 .collect(Collectors.toCollection(ArrayList::new));
-        ForumTag resolvedTag = thread.getParentChannel().asForumChannel().getAvailableTagById(resolvedTagId);
+        ForumTag resolvedTag = parentChannel.asForumChannel().getAvailableTagById(resolvedTagId);
         if (resolvedTag != null && currentTags.stream().noneMatch(tag -> tag.getIdLong() == resolvedTagId)) {
             currentTags.add(resolvedTag);
         }
@@ -251,7 +258,7 @@ public class IssueSyncService implements Runnable {
 
     private MessageEmbed buildIssueCommentEmbed(GitHub.IssueComment comment, boolean edited) {
         String description = comment.body() == null || comment.body().isBlank() ? "（本文なし）" : comment.body();
-        description = truncate(description, EMBED_DESCRIPTION_LIMIT);
+        description = truncate(description, EMBED_DESCRIPTION_SAFE_LIMIT);
 
         EmbedBuilder builder = new EmbedBuilder()
                 .setTitle(edited ? "GitHub Issue コメント (編集)" : "GitHub Issue コメント")
@@ -302,13 +309,6 @@ public class IssueSyncService implements Runnable {
     }
 
     private static Instant parseInstant(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        try {
-            return Instant.parse(value);
-        } catch (DateTimeParseException ignored) {
-            return null;
-        }
+        return TimeUtil.parseInstant(value);
     }
 }

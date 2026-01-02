@@ -184,48 +184,59 @@ public class GitHub {
         if (baseUrl == null) {
             return new ListIssueCommentsResult(List.of(), "Invalid GitHub API URL");
         }
-        HttpUrl.Builder urlBuilder = baseUrl.newBuilder()
-                .addQueryParameter("per_page", "100");
-        if (since != null && !since.isEmpty()) {
-            urlBuilder.addQueryParameter("since", since);
-        }
-        String url = urlBuilder.build().toString();
 
+        List<IssueComment> comments = new ArrayList<>();
+        int page = 1;
         try {
             OkHttpClient client = new OkHttpClient();
-            Request request = new Request.Builder()
-                    .url(url)
-                    .header("Authorization", String.format("token %s", githubToken))
-                    .get()
-                    .build();
-            try (Response response = client.newCall(request).execute()) {
-                ResponseBody responseBody = response.body();
-                String body = responseBody != null ? responseBody.string() : "";
-                if (response.code() != 200) {
-                    Main.getLogger().error("GitHub.listIssueComments: " + body);
-                    return new ListIssueCommentsResult(List.of(), body.isEmpty() ? "Unexpected status: " + response.code() : body);
+            while (true) {
+                HttpUrl.Builder urlBuilder = baseUrl.newBuilder()
+                        .addQueryParameter("per_page", "100")
+                        .addQueryParameter("page", String.valueOf(page));
+                if (since != null && !since.isEmpty()) {
+                    urlBuilder.addQueryParameter("since", since);
                 }
-                JSONArray array = new JSONArray(body);
-                List<IssueComment> comments = new ArrayList<>();
-                for (int i = 0; i < array.length(); i++) {
-                    JSONObject obj = array.optJSONObject(i);
-                    if (obj == null) {
-                        continue;
+                String url = urlBuilder.build().toString();
+                Request request = new Request.Builder()
+                        .url(url)
+                        .header("Authorization", String.format("token %s", githubToken))
+                        .get()
+                        .build();
+                try (Response response = client.newCall(request).execute()) {
+                    ResponseBody responseBody = response.body();
+                    String body = responseBody != null ? responseBody.string() : "";
+                    if (response.code() != 200) {
+                        Main.getLogger().error("GitHub.listIssueComments: " + body);
+                        return new ListIssueCommentsResult(List.of(), body.isEmpty() ? "Unexpected status: " + response.code() : body);
                     }
-                    long id = obj.optLong("id", -1);
-                    JSONObject user = obj.optJSONObject("user");
-                    String userLogin = user != null ? user.optString("login", null) : null;
-                    String commentBody = obj.optString("body", "");
-                    String createdAt = obj.optString("created_at", null);
-                    String updatedAt = obj.optString("updated_at", null);
-                    String htmlUrl = obj.optString("html_url", null);
-                    if (id <= 0) {
-                        continue;
+                    JSONArray array = new JSONArray(body);
+                    if (array.length() == 0) {
+                        break;
                     }
-                    comments.add(new IssueComment(id, userLogin, commentBody, createdAt, updatedAt, htmlUrl));
+                    for (int i = 0; i < array.length(); i++) {
+                        JSONObject obj = array.optJSONObject(i);
+                        if (obj == null) {
+                            continue;
+                        }
+                        long id = obj.optLong("id", -1);
+                        JSONObject user = obj.optJSONObject("user");
+                        String userLogin = user != null ? user.optString("login", null) : null;
+                        String commentBody = obj.optString("body", "");
+                        String createdAt = obj.optString("created_at", null);
+                        String updatedAt = obj.optString("updated_at", null);
+                        String htmlUrl = obj.optString("html_url", null);
+                        if (id <= 0) {
+                            continue;
+                        }
+                        comments.add(new IssueComment(id, userLogin, commentBody, createdAt, updatedAt, htmlUrl));
+                    }
+                    if (array.length() < 100) {
+                        break;
+                    }
+                    page++;
                 }
-                return new ListIssueCommentsResult(comments, null);
             }
+            return new ListIssueCommentsResult(comments, null);
         } catch (IOException e) {
             return new ListIssueCommentsResult(List.of(), e.getClass().getName() + " " + e.getMessage());
         }

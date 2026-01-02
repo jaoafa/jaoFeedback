@@ -120,6 +120,10 @@ public class Config {
         return issueSyncEnabled;
     }
 
+    public boolean getIssueSyncEnabled() {
+        return issueSyncEnabled;
+    }
+
     public int getIssueSyncIntervalSeconds() {
         return issueSyncIntervalSeconds;
     }

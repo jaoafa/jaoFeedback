@@ -220,7 +220,7 @@ public class FeedbackManager {
                 .orElse(null);
     }
 
-    public boolean updateFeedbackIssue(long threadId, String repository, int issueNumber) {
+    public synchronized boolean updateFeedbackIssue(long threadId, String repository, int issueNumber) {
         try {
             JSONArray array = new JSONArray();
             if (Files.exists(FEEDBACKS_PATH)) {

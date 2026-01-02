@@ -77,6 +77,7 @@ public class CloseReportEvent extends ListenerAdapter {
         if (feedback != null && feedback.repository() != null) {
             repository = feedback.repository();
         }
+        String originalRepository = repository;
 
         GitHub.ResolveIssueResult resolved = GitHub.resolveIssue(repository, issueNumber);
         if (resolved.error() != null) {
@@ -93,7 +94,7 @@ public class CloseReportEvent extends ListenerAdapter {
         }
         issueNumber = resolved.issueNumber();
         if (resolved.issueNumber() != originalIssueNumber ||
-                (resolved.repository() != null && (feedback == null || !resolved.repository().equals(feedback.repository())))) {
+                (resolved.repository() != null && !resolved.repository().equals(originalRepository))) {
             String baseTitle = thread.getName().replaceFirst("^\\*\\d+ ", "");
             thread.getManager().setName("*%d %s".formatted(issueNumber, baseTitle)).queue();
             feedbackManager.updateFeedbackIssue(thread.getIdLong(), repository, issueNumber);

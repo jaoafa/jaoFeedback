@@ -48,6 +48,7 @@ public class ChangeTitleSubmitEvent extends ListenerAdapter {
         if (feedback != null && feedback.repository() != null) {
             repository = feedback.repository();
         }
+        String originalRepository = repository;
 
         GitHub.ResolveIssueResult resolved = null;
         if (issueNumber != -1) {
@@ -77,7 +78,7 @@ public class ChangeTitleSubmitEvent extends ListenerAdapter {
             return;
         }
         if (resolved != null && (resolved.issueNumber() != originalIssueNumber ||
-                (resolved.repository() != null && (feedback == null || !resolved.repository().equals(feedback.repository()))))) {
+                (resolved.repository() != null && !resolved.repository().equals(originalRepository)))) {
             feedbackManager.updateFeedbackIssue(thread.getIdLong(), repository, issueNumber);
         }
         GitHub.UpdateIssueResult result = GitHub.updateIssue(repository, issueNumber, GitHub.UpdateType.TITLE, newTitle);

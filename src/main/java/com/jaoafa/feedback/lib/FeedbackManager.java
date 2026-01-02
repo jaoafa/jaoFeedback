@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumPost;
+import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import org.jetbrains.annotations.NotNull;
@@ -56,7 +57,8 @@ public class FeedbackManager {
         String threadTitle = getThreadTitle(title, createIssueResult);
         MessageEmbed embed = FeedbackModel.getFeatureRequestEmbed(description, message, requester, createIssueResult);
         MessageCreateData forumStartMessage = getForumStartMessage(message, requester, embed, createIssueResult);
-        ForumPost forum = channel.createForumPost(threadTitle, forumStartMessage).complete();
+        ForumPost forum = createForumPostWithUnresolvedTag(channel, threadTitle, forumStartMessage);
+        
         saveFeedback(new Feedback(FeedbackType.FEATURE_REQUEST,
                 message != null ? message.getIdLong() : -1,
                 new FeedbackUser(requester.getIdLong(), requester.getName()),
@@ -87,7 +89,8 @@ public class FeedbackManager {
         String threadTitle = getThreadTitle(title, createIssueResult);
         MessageEmbed embed = FeedbackModel.getImprovementRequestEmbed(description, target, message, requester, createIssueResult);
         MessageCreateData forumStartMessage = getForumStartMessage(message, requester, embed, createIssueResult);
-        ForumPost forum = channel.createForumPost(threadTitle, forumStartMessage).complete();
+        ForumPost forum = createForumPostWithUnresolvedTag(channel, threadTitle, forumStartMessage);
+        
         saveFeedback(new Feedback(FeedbackType.IMPROVEMENT_REQUEST,
                 message != null ? message.getIdLong() : -1,
                 new FeedbackUser(requester.getIdLong(), requester.getName()),
@@ -127,7 +130,7 @@ public class FeedbackManager {
         String threadTitle = getThreadTitle(title, createIssueResult);
         MessageEmbed embed = FeedbackModel.getBugReportEmbed(description, message, reporter, createIssueResult);
         MessageCreateData forumStartMessage = getForumStartMessage(message, reporter, embed, createIssueResult);
-        ForumPost forum = channel.createForumPost(threadTitle, forumStartMessage).complete();
+        ForumPost forum = createForumPostWithUnresolvedTag(channel, threadTitle, forumStartMessage);
 
         if (inputTitle == null) {
             // リアクションなどでタイトルがnullの場合、詳細情報を示してもらえるようメッセージを送る
@@ -172,6 +175,17 @@ public class FeedbackManager {
                 .setContent("<@" + user.getId() + "> この報告には詳細情報が含まれていません。このメッセージについて、なぜ不具合だと思ったか、改善策などについて投稿いただけませんか？")
                 .mention(user)
                 .build();
+    }
+
+    private ForumPost createForumPostWithUnresolvedTag(ForumChannel channel, String threadTitle, MessageCreateData forumStartMessage) {
+        long unresolvedTagId = Main.getConfig().getUnresolvedTagId();
+        ForumTag unresolvedTag = channel.getAvailableTagById(unresolvedTagId);
+        
+        var builder = channel.createForumPost(threadTitle, forumStartMessage);
+        if (unresolvedTag != null) {
+            builder.setTags(unresolvedTag);
+        }
+        return builder.complete();
     }
 
     public boolean isAlreadyFeedback(Message message) {

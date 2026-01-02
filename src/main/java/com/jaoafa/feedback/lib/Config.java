@@ -20,6 +20,8 @@ public class Config {
     private final Set<String> shouldJoinThreadMentionIds;
     private final String githubAPIToken;
     private final String repository;
+    private final long resolvedTagId;
+    private final long unresolvedTagId;
 
     public Config() throws RuntimeException {
         logger = Main.getLogger();
@@ -43,12 +45,16 @@ public class Config {
             requiredConfig(config, "guildId");
             requiredConfig(config, "channelId");
             requiredConfig(config, "githubAPIToken");
+            requiredConfig(config, "resolvedTagId");
+            requiredConfig(config, "unresolvedTagId");
 
             // - 設定項目の取得
             token = config.getString("token");
             guildId = config.getLong("guildId");
             channelId = config.getLong("channelId");
             githubAPIToken = config.getString("githubAPIToken");
+            resolvedTagId = config.getLong("resolvedTagId");
+            unresolvedTagId = config.getLong("unresolvedTagId");
 
             // - 任意項目の取得
             shouldJoinThreadMentionIds = config.optJSONArray("shouldJoinThreadMentionIds", new JSONArray()).toList().stream().map(Object::toString).collect(Collectors.toSet());
@@ -94,5 +100,13 @@ public class Config {
 
     public String getRepository() {
         return repository;
+    }
+
+    public long getResolvedTagId() {
+        return resolvedTagId;
+    }
+
+    public long getUnresolvedTagId() {
+        return unresolvedTagId;
     }
 }

@@ -7,6 +7,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.net.URI;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -83,6 +85,57 @@ public class GitHub {
     }
 
     public record CreateIssueCommentResult(String htmlUrl, String error) {
+    }
+
+    public static ResolveIssueResult resolveIssue(String repo, int issueNum) {
+        String githubToken = Main.getConfig().getGitHubAPIToken();
+        String url = String.format("https://api.github.com/repos/%s/issues/%s", repo, issueNum);
+
+        try {
+            OkHttpClient client = new OkHttpClient();
+            Request request = new Request.Builder()
+                    .url(url)
+                    .header("Authorization", String.format("token %s", githubToken))
+                    .get()
+                    .build();
+            try (Response response = client.newCall(request).execute()) {
+                if (response.code() != 200) {
+                    ResponseBody result = response.body();
+                    String details = result != null ? result.string() : "";
+                    Main.getLogger().error("GitHub.resolveIssue: " + details);
+                    return new ResolveIssueResult(null, -1, null, details);
+                }
+
+                JSONObject obj = new JSONObject(Objects.requireNonNull(response.body()).string());
+                int resolvedIssueNumber = obj.getInt("number");
+                String htmlUrl = obj.optString("html_url", null);
+
+                String resolvedRepo = null;
+                HttpUrl finalUrl = response.request().url();
+                List<String> segments = finalUrl.pathSegments();
+                if (segments.size() >= 5 && "repos".equals(segments.get(0)) && "issues".equals(segments.get(3))) {
+                    resolvedRepo = segments.get(1) + "/" + segments.get(2);
+                }
+                if (resolvedRepo == null && htmlUrl != null) {
+                    try {
+                        URI uri = URI.create(htmlUrl);
+                        String[] parts = uri.getPath().split("/");
+                        if (parts.length >= 3) {
+                            resolvedRepo = parts[1] + "/" + parts[2];
+                        }
+                    } catch (IllegalArgumentException ignored) {
+                        // Leave resolvedRepo as null.
+                    }
+                }
+
+                return new ResolveIssueResult(resolvedRepo, resolvedIssueNumber, htmlUrl, null);
+            }
+        } catch (IOException e) {
+            return new ResolveIssueResult(null, -1, null, e.getClass().getName() + " " + e.getMessage());
+        }
+    }
+
+    public record ResolveIssueResult(String repository, int issueNumber, String htmlUrl, String error) {
     }
 
     public static UpdateIssueResult updateIssue(String repo, int issueNum, UpdateType type, Object value) {

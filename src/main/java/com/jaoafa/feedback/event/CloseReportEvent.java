@@ -63,14 +63,43 @@ public class CloseReportEvent extends ListenerAdapter {
         
         thread.getManager().setAppliedTags(currentTags).queue();
         
-        thread.getManager().setArchived(true).setLocked(true).queue();
-
         Matcher matcher = FeedbackManager.ISSUE_PATTERN.matcher(thread.getName());
         if (!matcher.find()) {
+            thread.getManager().setArchived(true).setLocked(true).queue();
             return;
         }
-        String repository = Main.getConfig().getRepository();
         int issueNumber = Integer.parseInt(matcher.group(1));
+        int originalIssueNumber = issueNumber;
+
+        FeedbackManager feedbackManager = new FeedbackManager();
+        String repository = Main.getConfig().getRepository();
+        FeedbackManager.Feedback feedback = feedbackManager.getFeedbackByThreadId(thread.getIdLong());
+        if (feedback != null && feedback.repository() != null) {
+            repository = feedback.repository();
+        }
+
+        GitHub.ResolveIssueResult resolved = GitHub.resolveIssue(repository, issueNumber);
+        if (resolved.error() != null) {
+            String errorResult = resolved.error();
+            if (errorResult.length() > 100) {
+                errorResult = errorResult.substring(0, 100) + "...";
+            }
+            thread.sendMessage("GitHub Issue の解決に失敗しました:\n```\n%s\n```".formatted(errorResult)).complete();
+            thread.getManager().setArchived(true).setLocked(true).queue();
+            return;
+        }
+        if (resolved.repository() != null) {
+            repository = resolved.repository();
+        }
+        issueNumber = resolved.issueNumber();
+        if (resolved.issueNumber() != originalIssueNumber ||
+                (resolved.repository() != null && (feedback == null || !resolved.repository().equals(feedback.repository())))) {
+            String baseTitle = thread.getName().replaceFirst("^\\*\\d+ ", "");
+            thread.getManager().setName("*%d %s".formatted(issueNumber, baseTitle)).queue();
+            feedbackManager.updateFeedbackIssue(thread.getIdLong(), repository, issueNumber);
+        }
+
+        thread.getManager().setArchived(true).setLocked(true).queue();
         GitHub.createIssueComment(repository,
                 issueNumber,
                 "`%s` がスレッドをクローズしたため、本 issue もクローズします。\n\n## 理由\n\n%s".formatted(user.getName(), reason));

@@ -63,6 +63,7 @@ public class FeedbackManager {
                 message != null ? message.getIdLong() : -1,
                 new FeedbackUser(requester.getIdLong(), requester.getName()),
                 forum.getThreadChannel().getIdLong(),
+                repository,
                 createIssueResult.issueNumber()));
         return forum;
     }
@@ -95,6 +96,7 @@ public class FeedbackManager {
                 message != null ? message.getIdLong() : -1,
                 new FeedbackUser(requester.getIdLong(), requester.getName()),
                 forum.getThreadChannel().getIdLong(),
+                repository,
                 createIssueResult.issueNumber()));
         return forum;
     }
@@ -141,6 +143,7 @@ public class FeedbackManager {
                 message != null ? message.getIdLong() : -1,
                 new FeedbackUser(reporter.getIdLong(), reporter.getName()),
                 forum.getThreadChannel().getIdLong(),
+                repository,
                 createIssueResult.issueNumber()));
         return forum;
     }
@@ -205,6 +208,45 @@ public class FeedbackManager {
                 .orElse(null);
     }
 
+    public Feedback getFeedbackByThreadId(long threadId) {
+        List<Feedback> reports = loadReports();
+        if (reports == null) {
+            return null;
+        }
+        return reports
+                .stream()
+                .filter(r -> r.threadId() == threadId)
+                .findAny()
+                .orElse(null);
+    }
+
+    public boolean updateFeedbackIssue(long threadId, String repository, int issueNumber) {
+        try {
+            JSONArray array = new JSONArray();
+            if (Files.exists(FEEDBACKS_PATH)) {
+                array = new JSONArray(Files.readString(FEEDBACKS_PATH));
+            }
+            JSONArray newArray = new JSONArray();
+            boolean updated = false;
+            for (int i = 0; i < array.length(); i++) {
+                JSONObject obj = array.getJSONObject(i);
+                Feedback feedback = Feedback.fromJSON(obj);
+                if (feedback.threadId() == threadId) {
+                    feedback = new Feedback(feedback.type(), feedback.messageId(), feedback.reporter(), feedback.threadId(), repository, issueNumber);
+                    updated = true;
+                }
+                newArray.put(feedback.toJSON());
+            }
+            if (updated) {
+                Files.writeString(FEEDBACKS_PATH, newArray.toString());
+            }
+            return updated;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     private List<Feedback> loadReports() {
         try {
             List<Feedback> reports = new ArrayList<>();
@@ -234,21 +276,24 @@ public class FeedbackManager {
         }
     }
 
-    public record Feedback(FeedbackType type, long messageId, FeedbackUser reporter, long threadId, int issueNumber) {
+    public record Feedback(FeedbackType type, long messageId, FeedbackUser reporter, long threadId, String repository, int issueNumber) {
         JSONObject toJSON() {
             return new JSONObject()
                     .put("type", type)
                     .put("messageId", messageId)
                     .put("reporter", reporter.toJSON())
                     .put("threadId", threadId)
+                    .put("repository", repository)
                     .put("issueNumber", issueNumber);
         }
 
         static Feedback fromJSON(JSONObject json) {
+            String repository = json.optString("repository", Main.getConfig().getRepository());
             return new Feedback(json.getEnum(FeedbackType.class, "type"),
                     json.getLong("messageId"),
                     FeedbackUser.fromJSON(json.getJSONObject("reporter")),
                     json.getLong("threadId"),
+                    repository,
                     json.getInt("issueNumber"));
         }
     }

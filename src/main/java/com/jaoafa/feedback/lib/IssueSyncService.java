@@ -2,14 +2,15 @@ package com.jaoafa.feedback.lib;
 
 import com.jaoafa.feedback.Main;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
-import net.dv8tion.jda.api.EmbedBuilder;
 
 import java.awt.*;
 import java.time.Instant;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -173,7 +175,10 @@ public class IssueSyncService implements Runnable {
             return thread;
         }
         try {
-            return jda.retrieveThreadChannelById(threadId).complete();
+            Channel channel = jda.retrieveChannelById(threadId).complete();
+            if (channel != null && channel.getType().isThread()) {
+                return channel.asThreadChannel();
+            }
         } catch (ErrorResponseException e) {
             if (e.getErrorResponse() != ErrorResponse.UNKNOWN_CHANNEL && e.getErrorResponse() != ErrorResponse.MISSING_ACCESS) {
                 Main.getLogger().warn("Failed to retrieve thread: " + e.getMessage());

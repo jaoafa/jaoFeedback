@@ -123,6 +123,8 @@ public class FeedbackModel {
                         .withEmoji(Emoji.fromUnicode("\uD83D\uDD04")),
                 Button.primary("send-to-issue", "Issueにメッセージを送信")
                         .withEmoji(Emoji.fromUnicode("\uD83D\uDCAC")),
+                Button.primary("transfer-issue", "Issueを移動")
+                        .withEmoji(Emoji.fromUnicode("\uD83D\uDCE6")),
                 Button.danger("close-report", "リクエスト/報告をクローズ")
                         .withEmoji(Emoji.fromUnicode("\uD83D\uDD10")));
     }

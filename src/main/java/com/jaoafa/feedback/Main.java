@@ -46,6 +46,8 @@ public class Main {
                             new ImprovementMenuSubmitEvent(),
                             new ChangeTitleSubmitEvent(),
                             new SendToIssueEvent(),
+                            new TransferIssueEvent(),
+                            new TransferIssueSelectEvent(),
                             new CloseReportEvent(),
                             new ThreadButtonEvent())
                     .build()

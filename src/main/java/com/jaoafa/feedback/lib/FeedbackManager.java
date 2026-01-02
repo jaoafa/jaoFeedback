@@ -26,6 +26,7 @@ public class FeedbackManager {
     public static final Map<Long, Message> messageMap = new HashMap<>();
     public static final Map<Long, ThreadChannel> changeTitleMap = new HashMap<>();
     public static final Map<Long, ThreadChannel> sendToIssueMap = new HashMap<>();
+    public static final Map<Long, ThreadChannel> transferIssueMap = new HashMap<>();
     public static final Map<Long, ThreadChannel> closeReportMap = new HashMap<>();
     public static final Pattern ISSUE_PATTERN = Pattern.compile("^\\*(\\d+) ");
     private final Path FEEDBACKS_PATH;

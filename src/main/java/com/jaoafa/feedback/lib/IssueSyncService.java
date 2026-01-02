@@ -5,7 +5,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.entities.channel.Channel;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
@@ -58,6 +58,7 @@ public class IssueSyncService implements Runnable {
         if (userResult.error() != null) {
             Main.getLogger().warn("Failed to fetch GitHub authenticated user: " + userResult.error());
         }
+        Map<Long, ThreadChannel> activeThreads = fetchActiveThreads(Main.getJDA());
 
         for (FeedbackManager.Feedback feedback : feedbacks) {
             String repository = feedback.repository();
@@ -67,7 +68,7 @@ public class IssueSyncService implements Runnable {
             int issueNumber = feedback.issueNumber();
             long threadId = feedback.threadId();
 
-            ThreadChannel thread = resolveThread(Main.getJDA(), threadId);
+            ThreadChannel thread = resolveThread(Main.getJDA(), threadId, activeThreads);
             if (thread == null) {
                 continue;
             }
@@ -169,22 +170,31 @@ public class IssueSyncService implements Runnable {
         }
     }
 
-    private ThreadChannel resolveThread(JDA jda, long threadId) {
+    private ThreadChannel resolveThread(JDA jda, long threadId, Map<Long, ThreadChannel> activeThreads) {
         ThreadChannel thread = jda.getThreadChannelById(threadId);
         if (thread != null) {
             return thread;
         }
+        if (activeThreads != null) {
+            return activeThreads.get(threadId);
+        }
+        return null;
+    }
+
+    private Map<Long, ThreadChannel> fetchActiveThreads(JDA jda) {
+        Guild guild = jda.getGuildById(Main.getConfig().getGuildId());
+        if (guild == null) {
+            return null;
+        }
         try {
-            Channel channel = jda.retrieveChannelById(threadId).complete();
-            if (channel != null && channel.getType().isThread()) {
-                return channel.asThreadChannel();
-            }
+            List<ThreadChannel> threads = guild.retrieveActiveThreads().complete();
+            return threads.stream().collect(Collectors.toMap(ThreadChannel::getIdLong, thread -> thread, (a, b) -> a));
         } catch (ErrorResponseException e) {
             if (e.getErrorResponse() != ErrorResponse.UNKNOWN_CHANNEL && e.getErrorResponse() != ErrorResponse.MISSING_ACCESS) {
-                Main.getLogger().warn("Failed to retrieve thread: " + e.getMessage());
+                Main.getLogger().warn("Failed to retrieve active threads: " + e.getMessage());
             }
         } catch (Exception e) {
-            Main.getLogger().warn("Failed to retrieve thread: " + e.getMessage());
+            Main.getLogger().warn("Failed to retrieve active threads: " + e.getMessage());
         }
         return null;
     }

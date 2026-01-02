@@ -99,12 +99,17 @@ public class GitHub {
 
     public static AuthenticatedUserResult getAuthenticatedUserLogin() {
         String githubToken = Main.getConfig().getGitHubAPIToken();
-        if (cachedAuthenticatedUserToken != null && !cachedAuthenticatedUserToken.equals(githubToken)) {
-            cachedAuthenticatedUserLogin = null;
-            cachedAuthenticatedUserToken = null;
+        String cachedToken = cachedAuthenticatedUserToken;
+        String cachedLogin = cachedAuthenticatedUserLogin;
+        if (cachedToken != null && cachedToken.equals(githubToken) && cachedLogin != null) {
+            return new AuthenticatedUserResult(cachedLogin, null);
         }
-        if (cachedAuthenticatedUserLogin != null) {
-            return new AuthenticatedUserResult(cachedAuthenticatedUserLogin, null);
+        synchronized (GitHub.class) {
+            cachedToken = cachedAuthenticatedUserToken;
+            cachedLogin = cachedAuthenticatedUserLogin;
+            if (cachedToken != null && cachedToken.equals(githubToken) && cachedLogin != null) {
+                return new AuthenticatedUserResult(cachedLogin, null);
+            }
         }
         String url = "https://api.github.com/user";
 
@@ -129,8 +134,10 @@ public class GitHub {
                     Main.getLogger().error("GitHub.getAuthenticatedUserLogin: " + details);
                     return new AuthenticatedUserResult(null, details);
                 }
-                cachedAuthenticatedUserLogin = login;
-                cachedAuthenticatedUserToken = githubToken;
+                synchronized (GitHub.class) {
+                    cachedAuthenticatedUserLogin = login;
+                    cachedAuthenticatedUserToken = githubToken;
+                }
                 return new AuthenticatedUserResult(login, null);
             }
         } catch (IOException e) {

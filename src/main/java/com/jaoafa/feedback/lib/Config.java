@@ -116,10 +116,6 @@ public class Config {
         return unresolvedTagId;
     }
 
-    public boolean isIssueSyncEnabled() {
-        return issueSyncEnabled;
-    }
-
     public boolean getIssueSyncEnabled() {
         return issueSyncEnabled;
     }

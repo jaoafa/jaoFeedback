@@ -105,7 +105,7 @@ public class IssueSyncService implements Runnable {
                 if (!wasClosed) {
                     notifyIssueClosed(thread, issueResult);
                     applyResolvedTags(thread);
-                    thread.getManager().setArchived(true).setLocked(true).queue();
+                    archiveThread(thread);
                 }
                 state.lastIssueState = "closed";
                 updated = true;
@@ -145,6 +145,7 @@ public class IssueSyncService implements Runnable {
                 }
                 Instant updatedAt = parseInstant(comment.updatedAt());
                 IssueSyncStateStore.CommentState commentState = state.commentMap.get(comment.id());
+                boolean processed = false;
                 if (commentState == null) {
                     Message message = sendMessageWithTimeout(thread, buildIssueCommentEmbed(comment, false));
                     if (message != null) {
@@ -153,19 +154,25 @@ public class IssueSyncService implements Runnable {
                         newState.updatedAt = updatedAt;
                         state.commentMap.put(comment.id(), newState);
                         updated = true;
+                        processed = true;
                     }
                 } else if (updatedAt != null && (commentState.updatedAt == null || updatedAt.isAfter(commentState.updatedAt))) {
                     boolean edited = editIssueCommentMessage(thread, commentState.messageId, buildIssueCommentEmbed(comment, true));
-                    if (!edited) {
+                    if (edited) {
+                        processed = true;
+                    } else {
                         Message message = sendMessageWithTimeout(thread, buildIssueCommentEmbed(comment, true));
                         if (message != null) {
                             commentState.messageId = message.getIdLong();
+                            processed = true;
                         }
                     }
-                    commentState.updatedAt = updatedAt;
-                    updated = true;
+                    if (processed) {
+                        commentState.updatedAt = updatedAt;
+                        updated = true;
+                    }
                 }
-                if (updatedAt != null && (maxUpdatedAt == null || updatedAt.isAfter(maxUpdatedAt))) {
+                if (processed && updatedAt != null && (maxUpdatedAt == null || updatedAt.isAfter(maxUpdatedAt))) {
                     maxUpdatedAt = updatedAt;
                 }
             }
@@ -197,7 +204,9 @@ public class IssueSyncService implements Runnable {
             return null;
         }
         try {
-            List<ThreadChannel> threads = guild.retrieveActiveThreads().complete();
+            List<ThreadChannel> threads = guild.retrieveActiveThreads()
+                    .submit()
+                    .get(DISCORD_API_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS);
             return threads.stream().collect(Collectors.toMap(ThreadChannel::getIdLong, thread -> thread, (a, b) -> a));
         } catch (ErrorResponseException e) {
             if (e.getErrorResponse() == ErrorResponse.UNKNOWN_CHANNEL || e.getErrorResponse() == ErrorResponse.MISSING_ACCESS) {
@@ -226,7 +235,7 @@ public class IssueSyncService implements Runnable {
         if (updatedAt != null) {
             builder.setTimestamp(updatedAt);
         }
-        thread.sendMessageEmbeds(builder.build()).queue();
+        sendMessageWithTimeout(thread, builder.build());
     }
 
     private void applyResolvedTags(ThreadChannel thread) {
@@ -243,7 +252,26 @@ public class IssueSyncService implements Runnable {
         if (resolvedTag != null && currentTags.stream().noneMatch(tag -> tag.getIdLong() == resolvedTagId)) {
             currentTags.add(resolvedTag);
         }
-        thread.getManager().setAppliedTags(currentTags).queue();
+        try {
+            thread.getManager()
+                    .setAppliedTags(currentTags)
+                    .submit()
+                    .get(DISCORD_API_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (Exception e) {
+            Main.getLogger().warn("Failed to update thread tags: " + e.getMessage());
+        }
+    }
+
+    private void archiveThread(ThreadChannel thread) {
+        try {
+            thread.getManager()
+                    .setArchived(true)
+                    .setLocked(true)
+                    .submit()
+                    .get(DISCORD_API_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (Exception e) {
+            Main.getLogger().warn("Failed to archive thread: " + e.getMessage());
+        }
     }
 
     private boolean shouldSkipComment(GitHub.IssueComment comment, String botLogin) {
@@ -296,7 +324,7 @@ public class IssueSyncService implements Runnable {
                     .submit()
                     .get(DISCORD_API_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS);
         } catch (Exception e) {
-            Main.getLogger().warn("Failed to send issue comment message: " + e.getMessage());
+            Main.getLogger().warn("Failed to send embed message: " + e.getMessage());
             return null;
         }
     }

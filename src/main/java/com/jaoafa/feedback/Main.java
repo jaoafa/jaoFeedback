@@ -3,6 +3,8 @@ package com.jaoafa.feedback;
 import com.jaoafa.feedback.event.*;
 import com.jaoafa.feedback.lib.Config;
 import com.jaoafa.feedback.lib.FeedbackManager;
+import com.jaoafa.feedback.lib.IssueSyncService;
+import com.jaoafa.feedback.lib.IssueSyncStateStore;
 import com.jaoafa.feedback.menu.BugMenu;
 import com.jaoafa.feedback.menu.FeatureMenu;
 import com.jaoafa.feedback.menu.ImprovementMenu;
@@ -14,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
     static final Logger logger = LoggerFactory.getLogger("jaoFeedback");
@@ -59,6 +62,16 @@ public class Main {
 
         feedbackManager = new FeedbackManager();
         scheduler = Executors.newSingleThreadScheduledExecutor();
+
+        if (config.isIssueSyncEnabled()) {
+            int intervalSeconds = Math.max(config.getIssueSyncIntervalSeconds(), 30);
+            IssueSyncStateStore stateStore = new IssueSyncStateStore(config.getIssueSyncStatePath());
+            IssueSyncService service = new IssueSyncService(stateStore);
+            scheduler.scheduleAtFixedRate(service, intervalSeconds, intervalSeconds, TimeUnit.SECONDS);
+            logger.info("Issue sync scheduled every " + intervalSeconds + " seconds.");
+        } else {
+            logger.info("Issue sync is disabled.");
+        }
 
         logger.info("Started jaoFeedback.");
     }

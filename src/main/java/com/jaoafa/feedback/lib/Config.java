@@ -22,6 +22,9 @@ public class Config {
     private final String repository;
     private final long resolvedTagId;
     private final long unresolvedTagId;
+    private final boolean issueSyncEnabled;
+    private final int issueSyncIntervalSeconds;
+    private final String issueSyncStatePath;
 
     public Config() throws RuntimeException {
         logger = Main.getLogger();
@@ -59,6 +62,9 @@ public class Config {
             // - 任意項目の取得
             shouldJoinThreadMentionIds = config.optJSONArray("shouldJoinThreadMentionIds", new JSONArray()).toList().stream().map(Object::toString).collect(Collectors.toSet());
             repository = config.optString("repository", "jaoafa/jao-Minecraft-Server");
+            issueSyncEnabled = config.optBoolean("issueSyncEnabled", true);
+            issueSyncIntervalSeconds = config.optInt("issueSyncIntervalSeconds", 180);
+            issueSyncStatePath = config.optString("issueSyncStatePath", "issue_sync_state.json");
         } catch (IOException e) {
             logger.warn("コンフィグファイル config.json を読み取れませんでした: " + e.getMessage());
             e.printStackTrace();
@@ -108,5 +114,17 @@ public class Config {
 
     public long getUnresolvedTagId() {
         return unresolvedTagId;
+    }
+
+    public boolean isIssueSyncEnabled() {
+        return issueSyncEnabled;
+    }
+
+    public int getIssueSyncIntervalSeconds() {
+        return issueSyncIntervalSeconds;
+    }
+
+    public String getIssueSyncStatePath() {
+        return issueSyncStatePath;
     }
 }

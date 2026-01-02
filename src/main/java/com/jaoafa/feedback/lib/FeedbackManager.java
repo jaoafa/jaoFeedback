@@ -221,6 +221,11 @@ public class FeedbackManager {
                 .orElse(null);
     }
 
+    public List<Feedback> listFeedbacks() {
+        List<Feedback> reports = loadReports();
+        return reports != null ? reports : List.of();
+    }
+
     public synchronized boolean updateFeedbackIssue(long threadId, String repository, int issueNumber) {
         try {
             JSONArray array = new JSONArray();

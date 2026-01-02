@@ -6,11 +6,12 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.interactions.components.text.TextInput;
-import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
-import net.dv8tion.jda.api.interactions.modals.Modal;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.label.Label;
+import net.dv8tion.jda.api.components.textinput.TextInput;
+import net.dv8tion.jda.api.components.textinput.TextInputStyle;
+import net.dv8tion.jda.api.modals.Modal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,7 +35,7 @@ public class FeedbackModel {
 
     static {
         TextInput title = TextInput
-                .create("title", "新機能提案のタイトル", TextInputStyle.SHORT)
+                .create("title", TextInputStyle.SHORT)
                 .setPlaceholder("新機能について1行で簡潔に説明")
                 .setMinLength(3)
                 .setMaxLength(70)
@@ -42,7 +43,7 @@ public class FeedbackModel {
                 .build();
 
         TextInput description = TextInput
-                .create("description", "新機能についての説明", TextInputStyle.PARAGRAPH)
+                .create("description", TextInputStyle.PARAGRAPH)
                 .setPlaceholder("どんな機能が欲しいか、なぜ欲しいかなど")
                 .setMinLength(3)
                 .setMaxLength(1500)
@@ -51,14 +52,15 @@ public class FeedbackModel {
 
         FeatureRequestModal = Modal
                 .create("feature-request", "新機能リクエスト")
-                .addActionRow(title)
-                .addActionRow(description)
+                .addComponents(
+                        Label.of("新機能提案のタイトル", title),
+                        Label.of("新機能についての説明", description))
                 .build();
     }
 
     static {
         TextInput title = TextInput
-                .create("title", "機能改善のタイトル", TextInputStyle.SHORT)
+                .create("title", TextInputStyle.SHORT)
                 .setPlaceholder("機能改善について1行で簡潔に説明")
                 .setMinLength(3)
                 .setMaxLength(70)
@@ -66,7 +68,7 @@ public class FeedbackModel {
                 .build();
 
         TextInput target = TextInput
-                .create("target", "対象の機能名", TextInputStyle.SHORT)
+                .create("target", TextInputStyle.SHORT)
                 .setPlaceholder("コマンド名、プラグイン名など。分からなければ空白でも可")
                 .setMinLength(0)
                 .setMaxLength(70)
@@ -74,7 +76,7 @@ public class FeedbackModel {
                 .build();
 
         TextInput description = TextInput
-                .create("description", "改善についての説明", TextInputStyle.PARAGRAPH)
+                .create("description", TextInputStyle.PARAGRAPH)
                 .setPlaceholder("どんな改善が欲しいか、なぜ欲しいかなど")
                 .setMinLength(3)
                 .setMaxLength(1500)
@@ -83,15 +85,16 @@ public class FeedbackModel {
 
         ImprovementRequestModal = Modal
                 .create("improvement-request", "機能改善リクエスト")
-                .addActionRow(title)
-                .addActionRow(target)
-                .addActionRow(description)
+                .addComponents(
+                        Label.of("機能改善のタイトル", title),
+                        Label.of("対象の機能名", target),
+                        Label.of("改善についての説明", description))
                 .build();
     }
 
     static {
         TextInput title = TextInput
-                .create("title", "不具合のタイトル", TextInputStyle.SHORT)
+                .create("title", TextInputStyle.SHORT)
                 .setPlaceholder("不具合について1行で簡潔に説明")
                 .setMinLength(3)
                 .setMaxLength(70)
@@ -99,7 +102,7 @@ public class FeedbackModel {
                 .build();
 
         TextInput description = TextInput
-                .create("description", "不具合についての詳しい説明", TextInputStyle.PARAGRAPH)
+                .create("description", TextInputStyle.PARAGRAPH)
                 .setPlaceholder("なぜ不具合だと思ったか、改善策など")
                 .setMinLength(3)
                 .setMaxLength(1500)
@@ -108,8 +111,9 @@ public class FeedbackModel {
 
         BugReportModal = Modal
                 .create("bug-report", "不具合報告")
-                .addActionRow(title)
-                .addActionRow(description)
+                .addComponents(
+                        Label.of("不具合のタイトル", title),
+                        Label.of("不具合についての詳しい説明", description))
                 .build();
     }
 

@@ -7,10 +7,16 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
 public class GitHub {
+    private static volatile String cachedAuthenticatedUserLogin;
+    private static volatile String cachedAuthenticatedUserToken;
+
     public static CreateIssueResult createIssue(String repo, String title, String body, JSONArray labels) {
         String githubToken = Main.getConfig().getGitHubAPIToken();
         String url = String.format("https://api.github.com/repos/%s/issues", repo);
@@ -71,7 +77,13 @@ public class GitHub {
                     Main.getLogger().error("GitHub.createIssueComment: " + details);
                     return new CreateIssueCommentResult(null, details);
                 }
-                JSONObject obj = new JSONObject(Objects.requireNonNull(response.body()).string());
+                ResponseBody responseBody = response.body();
+                if (responseBody == null) {
+                    String details = "Empty response body";
+                    Main.getLogger().error("GitHub.createIssueComment: " + details);
+                    return new CreateIssueCommentResult(null, details);
+                }
+                JSONObject obj = new JSONObject(responseBody.string());
                 htmlUrl = obj.getString("html_url");
             }
 
@@ -83,6 +95,222 @@ public class GitHub {
     }
 
     public record CreateIssueCommentResult(String htmlUrl, String error) {
+    }
+
+    public static AuthenticatedUserResult getAuthenticatedUserLogin() {
+        String githubToken = Main.getConfig().getGitHubAPIToken();
+        String cachedToken = cachedAuthenticatedUserToken;
+        String cachedLogin = cachedAuthenticatedUserLogin;
+        if (cachedToken != null && cachedToken.equals(githubToken) && cachedLogin != null) {
+            return new AuthenticatedUserResult(cachedLogin, null);
+        }
+        synchronized (GitHub.class) {
+            cachedToken = cachedAuthenticatedUserToken;
+            cachedLogin = cachedAuthenticatedUserLogin;
+            if (cachedToken != null && cachedToken.equals(githubToken) && cachedLogin != null) {
+                return new AuthenticatedUserResult(cachedLogin, null);
+            }
+        }
+        String url = "https://api.github.com/user";
+
+        try {
+            OkHttpClient client = new OkHttpClient();
+            Request request = new Request.Builder()
+                    .url(url)
+                    .header("Authorization", String.format("token %s", githubToken))
+                    .get()
+                    .build();
+            try (Response response = client.newCall(request).execute()) {
+                ResponseBody responseBody = response.body();
+                String body = responseBody != null ? responseBody.string() : "";
+                if (response.code() != 200) {
+                    Main.getLogger().error("GitHub.getAuthenticatedUserLogin: " + body);
+                    return new AuthenticatedUserResult(null, body.isEmpty() ? "Unexpected status: " + response.code() : body);
+                }
+                JSONObject obj = new JSONObject(body);
+                String login = obj.optString("login", null);
+                if (login == null || login.isEmpty()) {
+                    String details = "Empty login in GitHub response";
+                    Main.getLogger().error("GitHub.getAuthenticatedUserLogin: " + details);
+                    return new AuthenticatedUserResult(null, details);
+                }
+                synchronized (GitHub.class) {
+                    cachedAuthenticatedUserLogin = login;
+                    cachedAuthenticatedUserToken = githubToken;
+                }
+                return new AuthenticatedUserResult(login, null);
+            }
+        } catch (IOException e) {
+            return new AuthenticatedUserResult(null, e.getClass().getName() + " " + e.getMessage());
+        }
+    }
+
+    public record AuthenticatedUserResult(String login, String error) {
+    }
+
+    public static IssueResult getIssue(String repo, int issueNum) {
+        String githubToken = Main.getConfig().getGitHubAPIToken();
+        String url = String.format("https://api.github.com/repos/%s/issues/%s", repo, issueNum);
+
+        try {
+            OkHttpClient client = new OkHttpClient();
+            Request request = new Request.Builder()
+                    .url(url)
+                    .header("Authorization", String.format("token %s", githubToken))
+                    .get()
+                    .build();
+            try (Response response = client.newCall(request).execute()) {
+                ResponseBody responseBody = response.body();
+                String body = responseBody != null ? responseBody.string() : "";
+                if (response.code() != 200) {
+                    Main.getLogger().error("GitHub.getIssue: " + body);
+                    return new IssueResult(null, null, null, body.isEmpty() ? "Unexpected status: " + response.code() : body);
+                }
+                JSONObject obj = new JSONObject(body);
+                String state = obj.optString("state", null);
+                String htmlUrl = obj.optString("html_url", null);
+                String updatedAt = obj.optString("updated_at", null);
+                if (state == null || state.isEmpty()) {
+                    String details = "Empty state in GitHub response";
+                    Main.getLogger().error("GitHub.getIssue: " + details);
+                    return new IssueResult(null, htmlUrl, updatedAt, details);
+                }
+                return new IssueResult(state, htmlUrl, updatedAt, null);
+            }
+        } catch (IOException e) {
+            return new IssueResult(null, null, null, e.getClass().getName() + " " + e.getMessage());
+        }
+    }
+
+    public record IssueResult(String state, String htmlUrl, String updatedAt, String error) {
+    }
+
+    public static ListIssueCommentsResult listIssueComments(String repo, int issueNum, String since) {
+        String githubToken = Main.getConfig().getGitHubAPIToken();
+        HttpUrl baseUrl = HttpUrl.parse(String.format("https://api.github.com/repos/%s/issues/%s/comments", repo, issueNum));
+        if (baseUrl == null) {
+            return new ListIssueCommentsResult(List.of(), "Invalid GitHub API URL");
+        }
+
+        List<IssueComment> comments = new ArrayList<>();
+        int page = 1;
+        try {
+            OkHttpClient client = new OkHttpClient();
+            while (true) {
+                HttpUrl.Builder urlBuilder = baseUrl.newBuilder()
+                        .addQueryParameter("per_page", "100")
+                        .addQueryParameter("page", String.valueOf(page));
+                if (since != null && !since.isEmpty()) {
+                    urlBuilder.addQueryParameter("since", since);
+                }
+                String url = urlBuilder.build().toString();
+                Request request = new Request.Builder()
+                        .url(url)
+                        .header("Authorization", String.format("token %s", githubToken))
+                        .get()
+                        .build();
+                try (Response response = client.newCall(request).execute()) {
+                    ResponseBody responseBody = response.body();
+                    String body = responseBody != null ? responseBody.string() : "";
+                    if (response.code() != 200) {
+                        Main.getLogger().error("GitHub.listIssueComments: " + body);
+                        return new ListIssueCommentsResult(List.of(), body.isEmpty() ? "Unexpected status: " + response.code() : body);
+                    }
+                    JSONArray array = new JSONArray(body);
+                    if (array.length() == 0) {
+                        break;
+                    }
+                    for (int i = 0; i < array.length(); i++) {
+                        JSONObject obj = array.optJSONObject(i);
+                        if (obj == null) {
+                            continue;
+                        }
+                        long id = obj.optLong("id", -1);
+                        JSONObject user = obj.optJSONObject("user");
+                        String userLogin = user != null ? user.optString("login", null) : null;
+                        String commentBody = obj.optString("body", "");
+                        String createdAt = obj.optString("created_at", null);
+                        String updatedAt = obj.optString("updated_at", null);
+                        String htmlUrl = obj.optString("html_url", null);
+                        if (id <= 0) {
+                            continue;
+                        }
+                        comments.add(new IssueComment(id, userLogin, commentBody, createdAt, updatedAt, htmlUrl));
+                    }
+                    if (array.length() < 100) {
+                        break;
+                    }
+                    page++;
+                }
+            }
+            return new ListIssueCommentsResult(comments, null);
+        } catch (IOException e) {
+            return new ListIssueCommentsResult(List.of(), e.getClass().getName() + " " + e.getMessage());
+        }
+    }
+
+    public record IssueComment(long id, String userLogin, String body, String createdAt, String updatedAt, String htmlUrl) {
+    }
+
+    public record ListIssueCommentsResult(List<IssueComment> comments, String error) {
+    }
+
+    public static ResolveIssueResult resolveIssue(String repo, int issueNum) {
+        String githubToken = Main.getConfig().getGitHubAPIToken();
+        String url = String.format("https://api.github.com/repos/%s/issues/%s", repo, issueNum);
+
+        try {
+            OkHttpClient client = new OkHttpClient();
+            Request request = new Request.Builder()
+                    .url(url)
+                    .header("Authorization", String.format("token %s", githubToken))
+                    .get()
+                    .build();
+            try (Response response = client.newCall(request).execute()) {
+                if (response.code() != 200) {
+                    ResponseBody result = response.body();
+                    String details = result != null ? result.string() : "";
+                    Main.getLogger().error("GitHub.resolveIssue: " + details);
+                    return new ResolveIssueResult(null, -1, null, null, details);
+                }
+
+                ResponseBody responseBody = response.body();
+                if (responseBody == null) {
+                    String details = "Empty response body";
+                    Main.getLogger().error("GitHub.resolveIssue: " + details);
+                    return new ResolveIssueResult(null, -1, null, null, details);
+                }
+                JSONObject obj = new JSONObject(responseBody.string());
+                int resolvedIssueNumber = obj.getInt("number");
+                String htmlUrl = obj.optString("html_url", null);
+                String nodeId = obj.optString("node_id", null);
+
+                String resolvedRepo = null;
+                HttpUrl finalUrl = response.request().url();
+                List<String> segments = finalUrl.pathSegments();
+                if (segments.size() >= 5 && "repos".equals(segments.get(0)) && "issues".equals(segments.get(3))) {
+                    resolvedRepo = segments.get(1) + "/" + segments.get(2);
+                }
+                if (resolvedRepo == null && htmlUrl != null) {
+                    try {
+                        URI uri = URI.create(htmlUrl);
+                        String[] parts = uri.getPath().split("/");
+                        if (parts.length >= 3) {
+                            resolvedRepo = parts[1] + "/" + parts[2];
+                        }
+                    } catch (IllegalArgumentException ignored) {
+                        // Leave resolvedRepo as null.
+                    }
+                }
+
+                return new ResolveIssueResult(resolvedRepo, resolvedIssueNumber, htmlUrl, nodeId, null);
+            }
+        } catch (IOException e) {
+            return new ResolveIssueResult(null, -1, null, null, e.getClass().getName() + " " + e.getMessage());
+        }
+    }
+
+    public record ResolveIssueResult(String repository, int issueNumber, String htmlUrl, String nodeId, String error) {
     }
 
     public static UpdateIssueResult updateIssue(String repo, int issueNum, UpdateType type, Object value) {
@@ -116,6 +344,179 @@ public class GitHub {
     }
 
     public record UpdateIssueResult(String error) {
+    }
+
+    public static ListRepositoriesResult listOrganizationRepositories(String organization, int limit) {
+        if (limit <= 0) {
+            return new ListRepositoriesResult(List.of(), "Invalid limit");
+        }
+        int perPage = Math.min(limit, 100);
+        String githubToken = Main.getConfig().getGitHubAPIToken();
+        String url = String.format("https://api.github.com/orgs/%s/repos?per_page=%d&sort=updated&direction=desc", organization, perPage);
+
+        try {
+            OkHttpClient client = new OkHttpClient();
+            Request request = new Request.Builder()
+                    .url(url)
+                    .header("Authorization", String.format("token %s", githubToken))
+                    .get()
+                    .build();
+            try (Response response = client.newCall(request).execute()) {
+                ResponseBody responseBody = response.body();
+                String body = responseBody != null ? responseBody.string() : "";
+                if (response.code() != 200) {
+                    Main.getLogger().error("GitHub.listOrganizationRepositories: " + body);
+                    return new ListRepositoriesResult(List.of(), body.isEmpty() ? "Unexpected status: " + response.code() : body);
+                }
+                JSONArray array = new JSONArray(body);
+                List<String> repositories = new ArrayList<>();
+                for (int i = 0; i < array.length(); i++) {
+                    JSONObject obj = array.optJSONObject(i);
+                    if (obj == null) {
+                        continue;
+                    }
+                    String fullName = obj.optString("full_name", null);
+                    if (fullName != null && !fullName.isEmpty()) {
+                        repositories.add(fullName);
+                    }
+                }
+                return new ListRepositoriesResult(repositories, null);
+            }
+        } catch (IOException e) {
+            return new ListRepositoriesResult(List.of(), e.getClass().getName() + " " + e.getMessage());
+        }
+    }
+
+    public record ListRepositoriesResult(List<String> repositories, String error) {
+    }
+
+    public static RepositoryNodeIdResult getRepositoryNodeId(String repo) {
+        String githubToken = Main.getConfig().getGitHubAPIToken();
+        String url = String.format("https://api.github.com/repos/%s", repo);
+
+        try {
+            OkHttpClient client = new OkHttpClient();
+            Request request = new Request.Builder()
+                    .url(url)
+                    .header("Authorization", String.format("token %s", githubToken))
+                    .get()
+                    .build();
+            try (Response response = client.newCall(request).execute()) {
+                if (response.code() != 200) {
+                    ResponseBody result = response.body();
+                    String details = result != null ? result.string() : "";
+                    Main.getLogger().error("GitHub.getRepositoryNodeId: " + details);
+                    return new RepositoryNodeIdResult(null, details);
+                }
+
+                ResponseBody responseBody = response.body();
+                if (responseBody == null) {
+                    String details = "Empty response body";
+                    Main.getLogger().error("GitHub.getRepositoryNodeId: " + details);
+                    return new RepositoryNodeIdResult(null, details);
+                }
+                JSONObject obj = new JSONObject(responseBody.string());
+                String nodeId = obj.optString("node_id", null);
+                if (nodeId == null || nodeId.isEmpty()) {
+                    String details = "Empty repository node_id";
+                    Main.getLogger().error("GitHub.getRepositoryNodeId: " + details);
+                    return new RepositoryNodeIdResult(null, details);
+                }
+                return new RepositoryNodeIdResult(nodeId, null);
+            }
+        } catch (IOException e) {
+            return new RepositoryNodeIdResult(null, e.getClass().getName() + " " + e.getMessage());
+        }
+    }
+
+    public record RepositoryNodeIdResult(String nodeId, String error) {
+    }
+
+    public static TransferIssueResult transferIssue(String issueNodeId, String targetRepository, boolean createLabelsIfMissing) {
+        RepositoryNodeIdResult repositoryNodeIdResult = getRepositoryNodeId(targetRepository);
+        if (repositoryNodeIdResult.error() != null) {
+            return new TransferIssueResult(null, null, null, repositoryNodeIdResult.error());
+        }
+
+        JSONObject variables = new JSONObject()
+                .put("issueId", issueNodeId)
+                .put("repositoryId", repositoryNodeIdResult.nodeId())
+                .put("createLabelsIfMissing", createLabelsIfMissing);
+        String query = "mutation($issueId: ID!, $repositoryId: ID!, $createLabelsIfMissing: Boolean!) {"
+                + " transferIssue(input: {issueId: $issueId, repositoryId: $repositoryId, createLabelsIfMissing: $createLabelsIfMissing}) {"
+                + " issue { number url repository { nameWithOwner } }"
+                + " }"
+                + "}";
+        JSONObject payload = new JSONObject()
+                .put("query", query)
+                .put("variables", variables);
+
+        String githubToken = Main.getConfig().getGitHubAPIToken();
+        try {
+            OkHttpClient client = new OkHttpClient();
+            RequestBody requestBody = RequestBody.create(payload.toString(),
+                    MediaType.parse("application/json; charset=UTF-8"));
+            Request request = new Request.Builder()
+                    .url("https://api.github.com/graphql")
+                    .header("Authorization", String.format("token %s", githubToken))
+                    .post(requestBody)
+                    .build();
+            try (Response response = client.newCall(request).execute()) {
+                ResponseBody responseBody = response.body();
+                String body = responseBody != null ? responseBody.string() : "";
+                if (response.code() != 200) {
+                    Main.getLogger().error("GitHub.transferIssue: " + body);
+                    return new TransferIssueResult(null, null, null, body.isEmpty() ? "Unexpected status: " + response.code() : body);
+                }
+                JSONObject obj = new JSONObject(body);
+                if (obj.has("errors")) {
+                    JSONArray errors = obj.getJSONArray("errors");
+                    StringBuilder detailsBuilder = new StringBuilder();
+                    for (int i = 0; i < errors.length(); i++) {
+                        JSONObject error = errors.optJSONObject(i);
+                        String message = error != null ? error.optString("message", error.toString()) : errors.get(i).toString();
+                        if (detailsBuilder.length() != 0) {
+                            detailsBuilder.append("\n");
+                        }
+                        detailsBuilder.append(message);
+                    }
+                    String details = detailsBuilder.length() == 0 ? "Unknown error" : detailsBuilder.toString();
+                    Main.getLogger().error("GitHub.transferIssue: " + details);
+                    return new TransferIssueResult(null, null, null, details);
+                }
+                JSONObject data = obj.optJSONObject("data");
+                if (data == null) {
+                    String details = "Empty data in GraphQL response";
+                    Main.getLogger().error("GitHub.transferIssue: " + details);
+                    return new TransferIssueResult(null, null, null, details);
+                }
+                JSONObject transfer = data.optJSONObject("transferIssue");
+                if (transfer == null) {
+                    String details = "Empty transferIssue in GraphQL response";
+                    Main.getLogger().error("GitHub.transferIssue: " + details);
+                    return new TransferIssueResult(null, null, null, details);
+                }
+                JSONObject issue = transfer.optJSONObject("issue");
+                if (issue == null) {
+                    String details = "Empty issue in GraphQL response";
+                    Main.getLogger().error("GitHub.transferIssue: " + details);
+                    return new TransferIssueResult(null, null, null, details);
+                }
+                int issueNumber = issue.getInt("number");
+                String htmlUrl = issue.optString("url", null);
+                String repository = null;
+                JSONObject repositoryObj = issue.optJSONObject("repository");
+                if (repositoryObj != null) {
+                    repository = repositoryObj.optString("nameWithOwner", null);
+                }
+                return new TransferIssueResult(issueNumber, repository, htmlUrl, null);
+            }
+        } catch (IOException e) {
+            return new TransferIssueResult(null, null, null, e.getClass().getName() + " " + e.getMessage());
+        }
+    }
+
+    public record TransferIssueResult(Integer issueNumber, String repository, String htmlUrl, String error) {
     }
 
     public enum UpdateType {

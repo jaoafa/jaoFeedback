@@ -43,7 +43,29 @@ public class SendToIssueEvent extends ListenerAdapter {
         if (issueNumber == -1) {
             return;
         }
+        FeedbackManager feedbackManager = new FeedbackManager();
         String repository = Main.getConfig().getRepository();
+        FeedbackManager.Feedback feedback = feedbackManager.getFeedbackByThreadId(thread.getIdLong());
+        if (feedback != null && feedback.repository() != null) {
+            repository = feedback.repository();
+        }
+        String originalRepository = repository;
+
+        GitHub.ResolveIssueResult resolved = GitHub.resolveIssue(repository, issueNumber);
+        if (resolved.error() != null) {
+            event.reply("GitHub Issue の解決に失敗しました: ```%s```".formatted(resolved.error())).setEphemeral(true).queue();
+            return;
+        }
+        if (resolved.repository() != null) {
+            repository = resolved.repository();
+        }
+        if (resolved.issueNumber() != issueNumber || (resolved.repository() != null && !resolved.repository().equals(originalRepository))) {
+            String baseTitle = thread.getName().replaceFirst("^\\*\\d+ ", "");
+            thread.getManager().setName("*%d %s".formatted(resolved.issueNumber(), baseTitle)).queue();
+            feedbackManager.updateFeedbackIssue(thread.getIdLong(), repository, resolved.issueNumber());
+        }
+        issueNumber = resolved.issueNumber();
+
         GitHub.CreateIssueCommentResult result = GitHub.createIssueComment(repository, issueNumber, "%s\n\n`%s` によるメッセージ".formatted(content, user.getName()));
 
         if (result.error() != null) {

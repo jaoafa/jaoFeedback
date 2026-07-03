@@ -82,6 +82,7 @@ jobs:
         [
           { imageName: "jaoafa/jaofeedback", context: ".", file: "Dockerfile", packageName: "jaofeedback" }
         ]
+      allow-unsafe-pr-checkout: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository }}
     secrets:
       DOCKER_USERNAME: ${{ github.actor }}
       DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}

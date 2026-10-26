@@ -139,6 +139,7 @@ public class IssueSyncService implements Runnable {
             comments.sort(Comparator.comparing(comment -> parseInstant(comment.updatedAt()), Comparator.nullsLast(Comparator.naturalOrder())));
 
             Instant maxUpdatedAt = state.lastCommentUpdatedAt;
+            Instant earliestFailedAt = null;
             for (GitHub.IssueComment comment : comments) {
                 if (shouldSkipComment(comment, botLogin)) {
                     continue;
@@ -146,6 +147,8 @@ public class IssueSyncService implements Runnable {
                 Instant updatedAt = parseInstant(comment.updatedAt());
                 IssueSyncStateStore.CommentState commentState = state.commentMap.get(comment.id());
                 boolean processed = false;
+                boolean needsSync = commentState == null
+                        || (updatedAt != null && (commentState.updatedAt == null || updatedAt.isAfter(commentState.updatedAt)));
                 if (commentState == null) {
                     Message message = sendMessageWithTimeout(thread, buildIssueCommentEmbed(comment, false));
                     if (message != null) {
@@ -175,9 +178,16 @@ public class IssueSyncService implements Runnable {
                 if (processed && updatedAt != null && (maxUpdatedAt == null || updatedAt.isAfter(maxUpdatedAt))) {
                     maxUpdatedAt = updatedAt;
                 }
+                if (needsSync && !processed) {
+                    Instant failedAt = updatedAt != null ? updatedAt : state.lastCommentUpdatedAt;
+                    if (earliestFailedAt == null || failedAt.isBefore(earliestFailedAt)) {
+                        earliestFailedAt = failedAt;
+                    }
+                }
             }
-            if (maxUpdatedAt != null && maxUpdatedAt.isAfter(state.lastCommentUpdatedAt)) {
-                state.lastCommentUpdatedAt = maxUpdatedAt;
+            Instant nextCursor = nextCursor(state.lastCommentUpdatedAt, maxUpdatedAt, earliestFailedAt);
+            if (nextCursor.isAfter(state.lastCommentUpdatedAt)) {
+                state.lastCommentUpdatedAt = nextCursor;
                 updated = true;
             }
         }
@@ -185,6 +195,13 @@ public class IssueSyncService implements Runnable {
         if (updated) {
             stateStore.save(states.values());
         }
+    }
+
+    // GitHub の since は境界を含むため、失敗したコメントの更新時刻でカーソルを止めれば次回も再取得される。
+    // 転送済みのコメントは commentMap で判定されるので再送されない。
+    static Instant nextCursor(Instant current, Instant maxProcessed, Instant earliestFailed) {
+        Instant next = earliestFailed == null || maxProcessed.isBefore(earliestFailed) ? maxProcessed : earliestFailed;
+        return next.isBefore(current) ? current : next;
     }
 
     private ThreadChannel resolveThread(JDA jda, long threadId, Map<Long, ThreadChannel> activeThreads) {

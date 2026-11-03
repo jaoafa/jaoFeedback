@@ -56,7 +56,7 @@ public class BugReactionEvent extends ListenerAdapter {
         if (feedbackManager.isAlreadyFeedback(message)) {
             channel
                     .sendMessage("%s, この不具合はすでに報告済みです。".formatted(user.getAsMention()))
-                    .delay(1, TimeUnit.MINUTES, Main.getScheduler()) // delete 1 minute later
+                    .delay(1, TimeUnit.MINUTES, Main.getScheduler()) // 1分後に削除する
                     .flatMap(Message::delete)
                     .queue();
             return;
@@ -70,7 +70,7 @@ public class BugReactionEvent extends ListenerAdapter {
                     .sendMessage("%s, 不具合報告に失敗しました: `%s %s`".formatted(user.getAsMention(),
                             e.getClass().getName(),
                             e.getMessage()))
-                    .delay(1, TimeUnit.MINUTES, Main.getScheduler()) // delete 1 minute later
+                    .delay(1, TimeUnit.MINUTES, Main.getScheduler()) // 1分後に削除する
                     .flatMap(Message::delete)
                     .queue();
             return;
@@ -79,7 +79,7 @@ public class BugReactionEvent extends ListenerAdapter {
         message.addReaction(Emoji.fromUnicode(targetReaction)).queue();
         channel
                 .sendMessage("%s, 不具合報告いただきありがとうございます！\nなぜ不具合だと思ったか、改善策などについて %s へ投稿いただけませんか？".formatted(user.getAsMention(), forum.getThreadChannel().getAsMention()))
-                .delay(1, TimeUnit.MINUTES, Main.getScheduler()) // delete 1 minute later
+                .delay(1, TimeUnit.MINUTES, Main.getScheduler()) // 1分後に削除する
                 .flatMap(Message::delete)
                 .queue();
     }

@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class IssueSyncService implements Runnable {
-    // Discord embed description limit is 4096; keep a small safety margin.
+    // Discord の embed description の上限は 4096 文字なので、余裕を持たせた値にする
     private static final int EMBED_DESCRIPTION_SAFE_LIMIT = 3800;
     private static final Pattern DISCORD_MESSAGE_MARKER = Pattern.compile("`.+` によるメッセージ");
     private static final long DISCORD_API_TIMEOUT_SECONDS = 10;

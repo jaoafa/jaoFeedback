@@ -46,16 +46,15 @@ public class CloseReportEvent extends ListenerAdapter {
                 .setColor(Color.RED)
                 .build()).complete();
         
-        // Update tags: add resolved tag and remove unresolved tag
         long resolvedTagId = Main.getConfig().getResolvedTagId();
         long unresolvedTagId = Main.getConfig().getUnresolvedTagId();
         
-        // Remove unresolved tag if present and collect to mutable list
+        // 未解決タグを除外する(setAppliedTags に渡すため変更可能なリストにする)
         List<ForumTag> currentTags = thread.getAppliedTags().stream()
                 .filter(tag -> tag.getIdLong() != unresolvedTagId)
                 .collect(Collectors.toCollection(java.util.ArrayList::new));
         
-        // Add resolved tag if not already present
+        // 解決済みタグが未付与なら追加する
         ForumTag resolvedTag = thread.getParentChannel().asForumChannel().getAvailableTagById(resolvedTagId);
         if (resolvedTag != null && currentTags.stream().noneMatch(tag -> tag.getIdLong() == resolvedTagId)) {
             currentTags.add(resolvedTag);

@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class IssueSyncStateStore {
-    // Access is currently single-threaded via the scheduler, so simple synchronization is sufficient.
+    // 現状はスケジューラ経由の単一スレッドからのみアクセスされるため、単純な同期で足りる
     private final Path path;
 
     public IssueSyncStateStore(String path) {
@@ -132,7 +132,7 @@ public class IssueSyncStateStore {
                             state.commentMap.put(commentId, commentState);
                         }
                     } catch (NumberFormatException ignored) {
-                        // Skip invalid keys.
+                        // 数値でないキーは無視する
                     }
                 }
             }

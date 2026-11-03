@@ -299,7 +299,7 @@ public class GitHub {
                             resolvedRepo = parts[1] + "/" + parts[2];
                         }
                     } catch (IllegalArgumentException ignored) {
-                        // Leave resolvedRepo as null.
+                        // URL を解釈できない場合は resolvedRepo を null のままにする
                     }
                 }
 

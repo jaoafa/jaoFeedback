@@ -132,7 +132,7 @@ public class FeedbackModel {
     public static String getMentionContent(User reporter, @Nullable Message message) {
         Config config = Main.getConfig();
 
-        // 通知ロール + 報告者 + メッセージ送信者
+        // 通知対象ユーザー + 報告者 + メッセージ送信者
         List<String> mentions = new ArrayList<>();
         for (String shouldJoinThreadMentionId : config.getShouldJoinThreadMentionIds()) {
             mentions.add("<@" + shouldJoinThreadMentionId + ">");
